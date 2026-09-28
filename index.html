@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Distributive Property</title>
+<style>
+:root{
+  --paper:#FFFFFF;
+  --ink:#16202E;
+  --ink-soft:#5C6D82;
+  --ink-faint:#8A99AB;
+  --rule:#DCE3EA;
+  --tint:#F1F4F7;
+  --pen:#DE3B30;
+  --pen-wash:#FCEDEC;
+  --go:#12744C;
+  --go-wash:#E4F1EA;
+  --fam0:#2358D8;
+  --fam1:#7A3FE0;
+  --fam2:#0C8577;
+  --fam3:#B3620A;
+  --font:Verdana,Geneva,Tahoma,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;padding:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+.app{height:100%;display:flex;flex-direction:column;gap:12px;padding:12px 22px 18px;max-width:1920px;margin:0 auto}
+
+/* ---------- top bar ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.title{font-size:20px;font-weight:700;margin:0;white-space:nowrap}
+.title em{font-style:normal;color:var(--pen)}
+.modes[hidden]{display:none}
+.levels{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+/* the problem sets sit in a bar under the work */
+.tabbar{display:flex;justify-content:center;flex:0 0 auto}
+.lvl{font-size:14px;font-weight:600;color:var(--ink-soft);background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:6px 11px;cursor:pointer}
+.lvl:hover{border-color:var(--ink-faint);color:var(--ink)}
+.lvl[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.lvlsep{width:1px;align-self:stretch;background:var(--rule);margin:2px 6px}
+.spacer{flex:1}
+.solved{font-size:15px;color:var(--ink-soft);white-space:nowrap;user-select:none;cursor:default}
+.solved b{font-size:24px;color:var(--go);margin-left:6px;vertical-align:-2px}
+.modes{display:inline-flex;gap:3px;border:1px solid var(--rule);border-radius:9px;padding:3px}
+.modes button{font-size:14px;font-weight:600;color:var(--ink-soft);background:transparent;border:0;border-radius:7px;padding:6px 13px;cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--ink);color:#fff}
+
+/* ---------- problem ---------- */
+.stage{flex:1;min-height:0;border:1px solid var(--rule);border-radius:16px;padding:18px 34px 22px;display:flex;flex-direction:column;overflow:auto}
+.stagehead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px}
+.prompt{font-size:19px;color:var(--ink-soft);margin:0}
+.strip{display:flex;flex-wrap:wrap;gap:4px}
+.strip:empty{display:none}
+.chip{font-size:14px;font-weight:600;min-width:32px;height:30px;padding:0 7px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--rule);border-radius:7px;cursor:pointer}
+.chip:hover{border-color:var(--ink-faint);color:var(--ink)}
+.chip.done{background:var(--go-wash);border-color:var(--go);color:var(--go)}
+.chip[aria-current="true"]{background:var(--pen);border-color:var(--pen);color:#fff}
+.work{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;padding:6px 0}
+.story{font-size:21px;line-height:1.55;max-width:80ch;margin:0 0 10px}
+.story[hidden],.exprwrap[hidden]{display:none}
+.exprwrap{position:relative;padding:64px 4px 6px}
+.arcs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.expr{font-size:64px;line-height:1.5;white-space:nowrap}
+.expr.wrapok{white-space:normal}
+.expr .paren{color:var(--ink-faint)}
+/* adding two groups: the parentheses start as black as the terms, then drop away */
+.expr.sumdark .paren{color:var(--ink);display:inline-block}
+/* adding two groups: the parentheses show in black, then fade away and the + stays */
+.expr .paren.gp{color:var(--ink);transition:opacity .45s ease-out}
+.expr .paren.gp.fade{opacity:0}
+.expr .paren.gp.gone{display:none}
+.expr .op{color:var(--ink-soft)}
+.expr .src{color:var(--pen)}
+.expr .eqs{color:var(--ink-faint);margin-left:.15em}
+sup{font-size:.58em;line-height:0;vertical-align:.75em}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 .05em}
+.frac .num{font-size:.6em;padding:0 .18em;border-bottom:.07em solid currentColor}
+.frac .den{font-size:.6em;padding:0 .18em}
+
+/* answer boxes sit under their terms; .flow is the fallback row */
+.slots{position:relative;margin-top:14px;min-height:96px}
+.slots.flow{display:flex;flex-wrap:wrap;gap:12px 14px;min-height:0}
+.slot{position:absolute;top:0;width:150px}
+.slots.flow .slot{position:static;width:clamp(150px,14vw,220px)}
+.slot label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.slots.flow .slot label{position:static;width:auto;height:auto;clip:auto;display:block;font-size:15px;color:var(--ink-faint);margin-bottom:5px}
+/* no boxes: the answer is written straight onto the page, over a faint line that shows where it goes */
+.slot input,.slot .shown{width:100%;min-height:64px;font-family:var(--font);font-size:32px;text-align:center;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--rule);border-radius:0;padding:8px 6px;transition:border-color .15s}
+.slot .rw{display:flex;align-items:center;justify-content:center;gap:.3em;white-space:nowrap;font-size:23px;line-height:1.2;color:var(--ink-soft);margin:0 -80px 4px;min-height:1.6em}
+.slot .rw .rx{color:var(--ink-soft);font-weight:700;font-size:1.3em;line-height:0}
+/* only the piece being worked on shows its multiplication */
+.slot .rw{visibility:hidden}
+.slot.rwon .rw{visibility:visible}
+.slot .rw .cut{position:relative;display:inline-block;color:var(--ink-faint)}
+.slot .rw .cut::after{content:"";position:absolute;left:-.1em;right:-.1em;top:50%;height:2px;border-radius:2px;background:var(--pen);transform:rotate(-18deg)}
+.slot .rw .rwnew{position:absolute;left:50%;transform:translateX(-50%);color:var(--pen);font-weight:700;font-size:.9em;line-height:1}
+.slot .rw .rwnew.up{bottom:100%;margin-bottom:.05em}
+.slot .rw .rwnew.down{top:100%;margin-top:.05em}
+.slot .rw .cut .rwnew{text-decoration:none}
+.slot .rw .rp{display:inline-flex;align-items:center;white-space:nowrap}
+.slot .rw .frac .num,.slot .rw .frac .den{font-size:.95em}
+/* every written line in a problem is the same height, so the answer lines stay level */
+.slot .rw{height:1.6em}
+.slots.rwtall .slot .rw{height:4em}
+.slot .rw .ro{color:var(--pen)}
+.slot input::placeholder{color:transparent}
+/* a group of opposites has no box: clicking its terms is the whole of the work */
+.slot.zeroslot{visibility:hidden}
+.slot input:hover{border-bottom-color:var(--ink-faint)}
+.slot input:focus{outline:none;border-bottom-color:var(--ink)}
+.slot .shown{display:flex;align-items:center;justify-content:center;color:var(--go);border-bottom-color:transparent}
+.slot.is-wrong input{border-bottom-color:var(--pen)}
+.slot.is-wrong .mirror{color:var(--pen)}
+.slot.is-right input{border-bottom-color:transparent}
+.slot.is-right .mirror{color:var(--go)}
+/* the box's text is drawn by a mirror on top, so exponents can sit high and small */
+.slot .field{position:relative;display:block}
+.slot input.mirrored{color:transparent;caret-color:transparent}
+.slot input.mirrored::selection{background:transparent;color:transparent}
+.slot .mirror{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;white-space:pre;overflow:hidden;
+  font-family:var(--font);font-size:32px;color:var(--ink);padding:8px 6px;border:0;border-bottom:2px solid transparent;line-height:1}
+.slot .mirror.long{justify-content:flex-end}
+.slot .mirror .mtx{display:inline-block;line-height:1.2}
+.slot .mirror sup{font-size:.55em;line-height:0;vertical-align:.8em}
+.slot .mirror .fr{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;font-size:.7em;line-height:1.08;margin:0 .1em;text-align:center}
+.slot .mirror .fn{padding:0 .12em .04em;border-bottom:2px solid currentColor}
+.slot .mirror .fd{padding:.04em .12em 0;min-height:1.1em}
+.slot .mirror .fd.empty{min-width:.9em;margin:.1em .1em 0;border:1.5px dashed var(--ink-faint);border-radius:.12em}
+.slot .mirror .sel{background:rgba(35,88,216,.22);border-radius:2px}
+.slot .mirror .xslot{display:inline-block;width:.42em;height:.5em;margin-left:.04em;border:1.5px dashed var(--ink-faint);border-radius:.08em;vertical-align:.42em}
+.slot .mirror .cur{display:inline-block;width:0;height:1em;border-left:2px solid var(--ink);margin-right:-2px;vertical-align:-.12em;animation:blink 1s steps(1) infinite}
+.slot .mirror .cur.up{height:.55em;vertical-align:.42em}
+.slot .mirror .xslot + .cur.up{margin-left:-.27em}
+@keyframes blink{50%{opacity:0}}
+.msg{font-size:14px;line-height:1.3;margin-top:5px;min-height:18px;text-align:center;color:var(--pen)}
+
+.line2{font-size:52px;line-height:1.5;white-space:nowrap;padding:0 4px;margin-top:4px;width:max-content}
+.line2[hidden]{display:none}
+.line2 .op{color:var(--ink-soft)}
+.line2 .eqs{color:var(--ink-faint);margin-right:.25em}
+.final{font-size:52px;line-height:1.5;white-space:nowrap;color:var(--go);padding:0 4px}
+.final .op{color:var(--go)}
+.final .eqs{color:var(--ink-faint);margin-right:.25em}
+.expr.answered .eqs{visibility:hidden}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font-size:17px;font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:11px 22px;cursor:pointer}
+.btn:hover{border-color:var(--ink-faint)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn[hidden]{display:none}
+.note{font-size:19px;color:var(--ink);margin:14px 0 0;min-height:28px}
+.note.good{color:var(--go);font-weight:700}
+
+/* ---------- teacher view (double-click "Solved", or Shift+T) ---------- */
+.teacher{position:fixed;top:calc(env(safe-area-inset-top,0px) + 60px);right:22px;width:min(340px,calc(100% - 44px));max-height:calc(100% - 90px);overflow:auto;background:var(--paper);border:1px solid var(--ink-faint);border-radius:14px;box-shadow:0 10px 30px rgba(22,32,46,.18);padding:16px 18px;z-index:10;font-size:15px}
+.teacher[hidden]{display:none}
+.teacher h2{font-size:17px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.teacher h3{font-size:14px;color:var(--ink-soft);margin:14px 0 6px}
+.teacher .x{font-size:20px;line-height:1;background:none;border:0;cursor:pointer;color:var(--ink-soft);padding:2px 6px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tgrid div{background:var(--tint);border-radius:8px;padding:6px 10px}
+.tgrid span{display:block;font-size:12px;color:var(--ink-soft)}
+.tgrid b{font-size:20px}
+.teacher ul{list-style:none;margin:0;padding:0}
+.teacher li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid var(--rule)}
+.teacher li:last-child{border-bottom:0}
+.teacher .none{color:var(--ink-faint);margin:0}
+.cls{display:flex;flex-wrap:wrap;gap:4px}
+.cls span{min-width:30px;text-align:center;border-radius:6px;padding:2px 6px;font-weight:600;background:var(--tint);color:var(--ink-faint)}
+.cls .first{background:var(--go-wash);color:var(--go)}
+.cls .fixed{background:#FFF4DB;color:#8A5A00}
+.cls .missed{background:var(--pen-wash);color:var(--pen)}
+.tfoot{display:flex;justify-content:space-between;margin-top:12px}
+.link{font-size:14px;background:none;border:0;padding:0;color:var(--ink-soft);text-decoration:underline;cursor:pointer}
+
+/* ---------- picking like terms once the parentheses are gone ---------- */
+.term.pickable{cursor:pointer}
+.term.pickable:hover{text-decoration:underline;text-decoration-color:var(--ink-faint);text-decoration-thickness:.05em;text-underline-offset:.16em}
+.term.pickable:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:.06em}
+.expr .f0,.line2 .f0{color:var(--fam0)}
+.expr .f1,.line2 .f1{color:var(--fam1)}
+.expr .f2,.line2 .f2{color:var(--fam2)}
+.expr .f3,.line2 .f3{color:var(--fam3)}
+.tpick{border-radius:.1em}
+.f0.tpick{background:rgba(35,88,216,.13)}
+.f1.tpick{background:rgba(122,63,224,.13)}
+.f2.tpick{background:rgba(12,133,119,.13)}
+.f3.tpick{background:rgba(179,98,10,.13)}
+.tdone{opacity:.42}
+.term.shake{display:inline-block;animation:shk .34s}
+@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-.09em)}75%{transform:translateX(.09em)}}
+
+/* ---------- cross simplify, written onto the expression ---------- */
+.btn.help{border-color:var(--pen);color:var(--pen)}
+.btn.help:hover{background:var(--pen-wash);border-color:var(--pen)}
+.expr .whole{position:relative;display:inline-block}
+.frac .num,.frac .den{position:relative}
+.expr .cut::after,.line2 .cut::after{content:"";position:absolute;left:-.06em;right:-.06em;top:48%;height:2px;border-radius:2px;background:var(--pen);transform:rotate(-15deg)}
+.exprwrap.simplifying .arcs{opacity:.18}
+.cslayer{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:2}
+.cslayer[hidden]{display:none}
+.cssvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.csbox{position:absolute;transform:translateX(-50%);pointer-events:auto;font-family:var(--font);font-weight:600;text-align:center;color:var(--pen);background:var(--paper);border:1px dashed var(--pen);border-radius:8px;padding:0;line-height:1;box-shadow:0 1px 4px rgba(22,32,46,.1)}
+.csbox::placeholder{color:#E7A9A4}
+.csbox:focus{outline:none;border-style:solid;border-color:var(--ink);box-shadow:0 0 0 3px rgba(22,32,46,.14)}
+.csbox.ok{border-style:solid;border-color:var(--go);background:var(--go-wash);color:var(--go)}
+.expr .csfactor,.expr .csterm,.line2 .csfactor,.line2 .csterm{background:rgba(35,88,216,.13);border-radius:.16em;box-shadow:0 0 0 .05em rgba(35,88,216,.13)}
+.expr .csfactor .sign,.expr .csterm .sign,.line2 .csfactor .sign,.line2 .csterm .sign{color:var(--fam0);font-weight:800}
+.cssign{font-size:15px;font-weight:700;color:var(--fam0);display:inline-block;margin-top:2px}
+
+/* ---------- algebra tiles (same pieces and colours as Combine Like Terms) ---------- */
+:root{--tp2:#4f7bd4;--tp1:#72a84c;--tp0:#f4c534;--tpy:#9468d6;--tpyy:#c255a8;--tpxy:#1f9e8f;--tn:#e3402b;--tedge:#1b2233}
+.tbtn{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink-soft);cursor:pointer;padding:0}
+.tbtn:hover{color:var(--ink);border-color:var(--ink-faint)}
+.tbtn svg{width:20px;height:20px}
+.tbtn[hidden]{display:none}
+.stagehead .tbtn{margin-left:auto}
+.tbtn[aria-pressed="false"]{opacity:.45}
+.tiles{margin-top:22px;display:flex;flex-direction:column;align-items:flex-start;gap:24px}
+@media (min-width:1001px){
+  .stage.withtiles{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr auto auto;column-gap:40px}
+  .stage.withtiles .stagehead{grid-column:1/-1}
+  .stage.withtiles .work{grid-column:1;grid-row:2;min-height:auto}
+  .stage.withtiles .controls{grid-column:1;grid-row:3}
+  .stage.withtiles .note{grid-column:1;grid-row:4}
+  .stage.withtiles .tiles{grid-column:2;grid-row:2/5;align-self:center;margin-top:0;padding-left:28px;border-left:1px solid var(--rule);box-sizing:content-box;width:var(--tw)}
+}
+.tiles[hidden]{display:none}
+.tile{position:relative;display:grid;place-items:center;border:2px solid var(--tedge);color:#fff;font-family:var(--font);line-height:1;user-select:none;white-space:nowrap}
+.tile sup{font-size:.6em;vertical-align:.6em;line-height:0}
+.tile.kxx{background:var(--tp2)} .tile.kx{background:var(--tp1)}
+.tile.k1{background:var(--tp0);color:#3a2a00}
+.tile.ky{background:var(--tpy)} .tile.kyy{background:var(--tpyy)} .tile.kxy{background:var(--tpxy)}
+.tile.neg{background:var(--tn);color:#fff}
+.tile.nolab span{display:none}
+.tile.piece{border-width:1.5px}
+/* the area model: the outside factor down the left, the inside terms across the top */
+.mat{display:inline-grid}
+.mat>*{justify-self:center;align-self:center}
+.mat .rule{justify-self:stretch;align-self:stretch;background:var(--ink-faint);border-radius:1px}
+.mat .corner{color:var(--ink-faint);line-height:1}
+/* the edges only measure: outlined, not solid, so they never count as part of the answer */
+.mat .tile.hd,.mat .tile.hdl{background:var(--paper);border-width:2.5px}
+.mat .tile.hd.k1,.mat .tile.hdl.k1{border-color:#c99a0a;color:#8a6700}
+.mat .tile.hd.kx,.mat .tile.hdl.kx{border-color:var(--tp1);color:#4d7a2e}
+.mat .tile.hd.ky,.mat .tile.hdl.ky{border-color:var(--tpy);color:#6a3fb0}
+.mat .tile.hd.neg,.mat .tile.hdl.neg{border-color:var(--tn);color:var(--tn)}
+/* the answer is only what sits on the shaded panel */
+.mat .field{justify-self:stretch;align-self:stretch;background:var(--tint);border-radius:4px;box-shadow:0 0 0 6px var(--tint)}
+.cell{border:1.5px dashed var(--rule);border-radius:2px;transition:border-color .2s,background .2s}
+.cell.on{border-color:var(--pen);background:var(--pen-wash)}
+.tile.hl{box-shadow:0 0 0 3px var(--pen)}
+.tile.fill{animation:tpop .32s ease-out backwards}
+@keyframes tpop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:none}}
+/* gathering like terms: opposite tiles meet and vanish */
+.fam{display:flex;flex-direction:column;gap:8px;transition:opacity .4s,filter .4s}
+.fam.dim{opacity:.3;filter:grayscale(1)}
+.trow{display:flex;flex-wrap:wrap;padding:4px;max-width:var(--tw,38rem)}
+.trow.show{animation:tpop .3s ease-out}
+.tile.mover{z-index:3;box-shadow:0 6px 14px rgba(0,0,0,.3)}
+.tile.vanished,.trow.spent,.fam.spent,.trow.hid,.fam.hid{display:none}
+.expr .term.tgone,.line2 .term.tgone,.expr .op.tgone,.line2 .op.tgone{color:var(--ink-faint);text-decoration:line-through;text-decoration-thickness:.05em}
+
+
+/* ---------- problem count and turning in ---------- */
+.head{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px}
+.count{font-size:15px;color:var(--ink-soft);white-space:nowrap}
+.count[hidden],.tilink[hidden]{display:none}
+.tilink{font-size:14px;font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--ink-faint);border-radius:8px;padding:5px 12px;cursor:pointer;align-self:center}
+.tilink:hover{border-color:var(--ink)}
+.turnin{position:fixed;inset:0;z-index:100;overflow:auto;background:var(--paper)}
+.turnin[hidden]{display:none}
+.ti-inner{max-width:640px;margin:clamp(12px,4vh,40px) auto;padding:26px clamp(18px,4vw,34px) 30px;background:var(--paper);border:1px solid var(--rule);border-radius:14px}
+.ti-inner h2{margin:0 0 6px;font-size:24px}
+.ti-sub{color:var(--ink-soft);line-height:1.55;margin:0 0 18px}
+.ti-recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.ti-recap>div{border:1.5px solid var(--rule);border-radius:10px;padding:10px 14px;color:var(--ink-soft);font-size:14px}
+.ti-recap b{display:block;color:var(--ink);font-size:24px}
+.ti-log{max-height:260px;overflow:auto;margin-top:16px;padding:6px 0;border-top:1.5px solid var(--rule);border-bottom:1.5px solid var(--rule)}
+.ti-row{display:flex;gap:10px;align-items:baseline;padding:5px 2px}
+.ti-n{color:var(--ink-soft);min-width:28px;text-align:right;font-size:14px}
+.ti-q{flex:1;min-width:0}
+.ti-k{font-size:13px;white-space:nowrap;color:var(--go)}
+.ti-k.retry{color:#8A5A00}
+#gform{margin-top:20px}
+#gform[hidden]{display:none}
+.ti-warn{background:#FFF4DB;border-radius:10px;padding:11px 14px;margin-bottom:18px;line-height:1.55;font-size:15px}
+.ti-field{margin-bottom:14px}
+.ti-field label{display:block;margin-bottom:6px}
+.ti-field label em{font-style:normal;color:var(--ink-soft);font-size:14px}
+.ti-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:8px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px}
+.ti-field input{font:inherit;font-size:17px;color:var(--ink);width:100%;border:1.5px solid var(--rule);border-radius:10px;padding:9px 12px;background:var(--paper)}
+.ti-field input:focus{outline:2px solid var(--ink);outline-offset:1px}
+.ti-check{border:1.5px solid var(--rule);border-radius:10px;padding:11px 14px;margin:4px 0 16px}
+.ti-check .hd{color:var(--ink-soft);font-size:14px;margin-bottom:8px}
+.ti-check .r{display:flex;gap:12px;align-items:baseline;margin-bottom:4px}
+.ti-check .r:last-child{margin-bottom:0;padding-top:6px;border-top:1.5px solid var(--rule)}
+.ti-check .t{color:var(--ink-soft);min-width:88px;font-size:14px}
+.ti-check .v.empty{color:var(--ink-faint)}
+.ti-btn{font:inherit;font-weight:700;border:none;border-radius:10px;padding:11px 26px;background:var(--ink);color:#fff;cursor:pointer}
+.ti-feedback{margin-top:14px;min-height:1.2em}
+.ti-feedback .ok{color:var(--go)}
+.ti-feedback .nt{color:var(--ink-soft)}
+.ti-after{margin-top:20px;padding-top:16px;border-top:1.5px solid var(--rule);display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--ink-soft)}
+.ti-ghost{font:inherit;border:1px solid var(--rule);border-radius:10px;padding:8px 16px;background:none;color:var(--ink);cursor:pointer}
+
+@media (max-height:760px) and (min-width:1001px){
+  .app{padding:8px 18px 12px;gap:8px}
+  .stage{padding:14px 28px 16px}
+  .story{font-size:19px}
+  .note{margin-top:10px}
+}
+@media (max-width:1000px){
+  html,body{height:auto}
+  .app{height:auto;padding:10px 12px 22px}
+  .spacer{display:none}
+  .stage{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*:not(.tile):not(.trow){animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="head">
+      <h1 class="title">DISTRIBUTIVE PROPERTY</h1>
+      <span class="count" id="count" hidden></span>
+      <button class="tilink" id="tiLink" type="button" hidden>Turn in</button>
+    </div>
+    <span class="spacer"></span>
+    <span class="solved" id="solvedBox">Solved<b id="s-ok">0</b></span>
+    <div class="modes" role="group" aria-label="Mode" hidden>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div class="stagehead">
+      <p class="prompt" id="prompt"></p>
+      <div class="strip" id="strip" role="group" aria-label="Class problems"></div>
+      <button class="tbtn" id="tlbtn" type="button" title="Show or hide algebra tiles" aria-label="Algebra tiles" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="10" height="10"/><rect x="15" y="3" width="4" height="10"/><rect x="3" y="15" width="4" height="4"/><rect x="9" y="15" width="4" height="4"/></svg>
+    </button>
+    </div>
+
+    <div class="work">
+      <p class="story" id="story" hidden></p>
+      <div class="exprwrap" id="exprwrap">
+        <svg class="arcs" id="arcs" aria-hidden="true"></svg>
+        <div class="expr" id="expr"></div>
+        <div class="cslayer" id="cslayer" hidden></div>
+      </div>
+      <div class="line2" id="line2" hidden></div>
+      <div class="slots" id="slots"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="check" type="button">Check</button>
+      <button class="btn help" id="csbtn" type="button" hidden>Cross simplify</button>
+      <button class="btn" id="csshow" type="button" hidden>Show me</button>
+      <button class="btn" id="prev" type="button" hidden>Previous</button>
+      <button class="btn primary" id="next" type="button" hidden>Next</button>
+    </div>
+    <p class="note" id="note" role="status" aria-live="polite"></p>
+    <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
+  </main>
+
+</div>
+
+
+<div class="turnin" id="turnin" role="dialog" aria-labelledby="ti-title" hidden>
+  <div class="ti-inner">
+    <h2 id="ti-title">All 20 done</h2>
+    <p class="ti-sub" id="ti-sub">Enter your period and name.</p>
+    <div class="ti-recap" id="ti-recap"></div>
+    <div id="ti-log"></div>
+
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none"
+            onload="if(window.onHiddenFrameLoad)onHiddenFrameLoad()"></iframe>
+
+    <form action="https://docs.google.com/forms/d/e/1FAIpQLSe4_Gnrq1zyrttA3lSgrVBtMkaVaoMim31ByzoH-orxmfDB2A/formResponse"
+          method="POST" target="hidden_iframe" id="gform">
+      <div class="ti-warn">Last name in the <b>Last name</b> box, first name in the <b>First name</b> box. Swapped names count as missing.</div>
+      <div class="ti-field">
+        <label for="studentPeriod"><span class="ti-num">1</span>Period</label>
+        <input type="number" id="studentPeriod" placeholder="e.g. 3" min="1" max="10" required>
+      </div>
+      <div class="ti-field">
+        <label for="lastName"><span class="ti-num">2</span>LAST name
+</label>
+        <input type="text" id="lastName" placeholder="Rodriguez" autocomplete="family-name" required>
+      </div>
+      <div class="ti-field">
+        <label for="firstName"><span class="ti-num">3</span>FIRST name
+</label>
+        <input type="text" id="firstName" placeholder="Maria" autocomplete="given-name" required>
+      </div>
+      <div class="ti-check" id="nameCheck"></div>
+      <input type="hidden" id="studentName" name="entry.1899284808" value="">
+      <input type="hidden" id="formScore" name="entry.1974610095" value="">
+      <button type="submit" class="ti-btn" id="ti-submit">Submit Results</button>
+    </form>
+
+    <div class="ti-feedback" id="ti-feedback"></div>
+    <div class="ti-after">
+      <span id="ti-aftertext"></span>
+      <button class="ti-ghost" type="button" id="ti-back">Keep practicing</button>
+    </div>
+  </div>
+</div>
+
+<aside class="teacher" id="teacher" hidden aria-label="Teacher view">
+  <h2>Teacher view <button class="x" id="tclose" type="button" aria-label="Close">&times;</button></h2>
+  <div class="tgrid">
+    <div><span>Solved</span><b id="t-ok">0</b></div>
+    <div><span>Attempted</span><b id="t-all">0</b></div>
+    <div><span>First-try accuracy</span><b id="t-acc">&ndash;</b></div>
+    <div><span>Streak (best)</span><b id="t-str">0</b></div>
+    <div style="grid-column:1/-1"><span>Wrong answers (hint shown)</span><b id="t-hint">0</b></div>
+  </div>
+  <h3>Class problems</h3>
+  <div class="cls" id="t-cls"></div>
+  <h3>Mistakes by type</h3>
+  <ul id="t-tally"></ul>
+  <div class="tfoot">
+    <span class="link" style="text-decoration:none;cursor:default;color:var(--ink-faint)">Green first try, yellow fixed, red missed</span>
+  </div>
+  <div class="tfoot"><button class="link" id="reset" type="button">Reset session</button></div>
+</aside>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- rational arithmetic ---------- */
+function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a||1;}
+function R(n,d){d=(d===undefined?1:d);if(d<0){n=-n;d=-d;}var g=gcd(Math.abs(n),Math.abs(d));return [n/g,d/g];}
+function mul(a,b){return R(a[0]*b[0],a[1]*b[1]);}
+function add(a,b){return R(a[0]*b[1]+b[0]*a[1],a[1]*b[1]);}
+function neg(a){return [-a[0],a[1]];}
+function eq(a,b){return a[0]===b[0]&&a[1]===b[1];}
+function isZero(a){return a[0]===0;}
+function isOne(a){return a[0]===1&&a[1]===1;}
+
+/* ---------- variable parts: "x", "xy", "x^2" ---------- */
+function normV(s){
+  var map={},re=/([a-z])(?:\^?(\d+))?/g,m;
+  s=String(s||"");
+  while((m=re.exec(s))){map[m[1]]=(map[m[1]]||0)+(m[2]?parseInt(m[2],10):1);}
+  return Object.keys(map).sort().map(function(k){return k+(map[k]>1?"^"+map[k]:"");}).join("");
+}
+function T(n,d,v){return {c:R(n,d||1),v:normV(v||"")};}
+function mulTerm(a,b){return {c:mul(a.c,b.c),v:normV(a.v+b.v)};}
+
+/* ---------- helpers ---------- */
+function ri(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+var VARS=["x","y","k","m","n","b","s","q","w","j","p","c"];
+function twoVars(){var a=pick(VARS),b=pick(VARS);while(b===a)b=pick(VARS);return [a,b];}
+
+function terminates(d){while(d%2===0)d/=2;while(d%5===0)d/=5;return d===1;}
+function decStr(c){return String(parseFloat((c[0]/c[1]).toFixed(6)));}
+function plainFrac(c,dec){
+  if(c[1]===1)return String(c[0]);
+  if(dec&&terminates(c[1]))return decStr(c);
+  return c[0]+"/"+c[1];
+}
+function plainTerm(t,dec){
+  if(!t.v)return plainFrac(t.c,dec);
+  if(isOne(t.c))return t.v;
+  if(eq(t.c,R(-1)))return "-"+t.v;
+  return plainFrac(t.c,dec)+t.v;
+}
+function pretty(s){return String(s).replace(/\^2/g,"\u00b2").replace(/\^3/g,"\u00b3").replace(/-/g,"\u2212");}
+function htmlV(v){return v.replace(/\^(\d+)/g,"<sup>$1</sup>");}
+function htmlFrac(c,dec){
+  var sign=c[0]<0?'<span class="sign">&minus;</span>':"";
+  if(c[1]===1)return sign+'<span class="whole">'+Math.abs(c[0])+'</span>';
+  if(dec&&terminates(c[1]))return sign+'<span class="whole">'+decStr([Math.abs(c[0]),c[1]])+'</span>';
+  return sign+'<span class="frac"><span class="num">'+Math.abs(c[0])+'</span><span class="den">'+c[1]+'</span></span>';
+}
+function htmlTerm(t,dec){
+  if(!t.v)return htmlFrac(t.c,dec);
+  if(isOne(t.c))return htmlV(t.v);
+  if(eq(t.c,R(-1)))return '<span class="sign">&minus;</span>'+htmlV(t.v);
+  return htmlFrac(t.c,dec)+htmlV(t.v);
+}
+function htmlAbsTerm(t,dec){return htmlTerm({c:t.c[0]<0?neg(t.c):t.c,v:t.v},dec);}
+
+function joinTerms(list,dec){
+  return list.map(function(t,i){
+    var span='<span class="term" data-t="'+i+'" data-v="'+t.v+'">'+(i===0?htmlTerm(t,dec):htmlAbsTerm(t,dec))+'</span>';
+    if(i===0)return span;
+    return '<span class="op"> '+(t.c[0]<0?"&minus;":"+")+' </span>'+span;
+  }).join("");
+}
+
+function plainList(list,dec){
+  return list.map(function(t,i){
+    if(i===0)return plainTerm(t,dec);
+    return (t.c[0]<0?" - ":" + ")+plainTerm({c:t.c[0]<0?neg(t.c):t.c,v:t.v},dec);
+  }).join("");
+}
+
+/* ---------- answer parsing ---------- */
+function decToR(x){
+  if(x.indexOf(".")>-1){var d=x.split(".")[1].length,p=Math.pow(10,d);return R(Math.round(parseFloat(x)*p),p);}
+  return R(parseInt(x,10),1);
+}
+var SUP="\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079";
+function toSup(d){return d.replace(/\d/g,function(c){return SUP[+c];});}
+function fromSup(m){return m.split("").map(function(c){return SUP.indexOf(c);}).join("");}
+/* in a box, a number typed right after a letter (x2 or x^2) becomes a raised exponent: x² */
+function raiseExponents(inp){
+  var v=inp.value;
+  var nv=v.replace(/([a-zA-Z])\^?(\d+)/g,function(_,l,d){return l+toSup(d);});
+  if(nv===v)return;
+  var pos=inp.selectionStart,atEnd=pos===v.length;
+  inp.value=nv;
+  var p=atEnd?nv.length:Math.max(0,pos-(v.length-nv.length));
+  inp.setSelectionRange(p,p);
+}
+/* draws the box's text with exponents raised and small; a caret right after ^ or an exponent sits up high too */
+function drawMirror(inp,mir){
+  var v=inp.value,f=document.activeElement===inp;
+  var s=f?inp.selectionStart:-1,e=f?inp.selectionEnd:-1;
+  mir.style.fontSize=getComputedStyle(inp).fontSize;
+  var isSup=function(c){return c&&SUP.indexOf(c)>-1;};
+  var isNum=function(c){return /[0-9.]/.test(c);};
+  var esc=function(c){return c==="<"?"&lt;":c==="&"?"&amp;":c;};
+  var caret=function(i,flat){
+    if(!f||s!==e||s!==i)return "";
+    var p=v.charAt(i-1);
+    return '<span class="cur'+(!flat&&(p==="^"||isSup(p))?" up":"")+'"></span>';
+  };
+  var ch=function(i){
+    var c=v.charAt(i),o;
+    if(c==="^")o='<span class="xslot"></span>';
+    else if(isSup(c))o='<sup>'+SUP.indexOf(c)+'</sup>';
+    else if(c==="-")o="\u2212";
+    else o=esc(c);
+    if(f&&s!==e&&i>=s&&i<e)o='<span class="sel">'+o+'</span>';
+    return o;
+  };
+  var h="",i=0,fend=-1;
+  while(i<v.length){
+    /* a number, a slash, and a number (or nothing yet) is drawn as a stacked fraction */
+    var j=i;
+    if(isNum(v.charAt(i))&&(i===0||!isNum(v.charAt(i-1)))){
+      while(j<v.length&&isNum(v.charAt(j)))j++;
+    }
+    if(j>i&&v.charAt(j)==="/"){
+      var k=j+1;
+      while(k<v.length&&isNum(v.charAt(k)))k++;
+      var num="",den="",q;
+      for(q=i;q<j;q++)num+=(q>i?caret(q,1):"")+ch(q);
+      num+=caret(j,1);
+      for(q=j+1;q<k;q++)den+=caret(q,1)+ch(q);
+      den+=caret(k,1);
+      h+=(i===fend?"":caret(i))+'<span class="fr"><span class="fn">'+num+'</span><span class="fd'+(k===j+1?' empty':'')+'">'+den+'</span></span>';
+      i=k;fend=k;
+      continue;
+    }
+    h+=(i===fend?"":caret(i))+ch(i);
+    i++;
+  }
+  /* a caret right after a fraction was already drawn inside its bottom */
+  if(fend!==v.length)h+=caret(v.length);
+  mir.innerHTML='<span class="mtx">'+h+'</span>';
+  mir.classList.toggle("long",mir.scrollWidth>mir.clientWidth+1);
+}
+function parseTerm(raw){
+  var s=String(raw).toLowerCase()
+    .replace(/\s+/g,"").replace(/[\u2212\u2013\u2014]/g,"-").replace(/[*\u00b7\u00d7()]/g,"")
+    .replace(/[\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+/g,function(m){return "^"+fromSup(m);});
+  if(!s)return null;
+  var m=s.match(/^([+-]?)(\d*\.?\d+(?:\/\d*\.?\d+)?)?((?:[a-z](?:\^?\d+)?)*)$/);
+  if(!m)return null;
+  var sign=m[1],num=m[2],v=m[3]||"",c;
+  if(num===undefined){if(!v)return null;c=R(1);}
+  else if(num.indexOf("/")>-1){
+    var p=num.split("/"),dn=decToR(p[1]);
+    if(dn[0]===0)return null;
+    c=mul(decToR(p[0]),R(dn[1],dn[0]));
+  } else c=decToR(num);
+  if(sign==="-")c=neg(c);
+  return {c:c,v:normV(v)};
+}
+function isRight(got,want){
+  return !!got&&((isZero(want.c)&&isZero(got.c))||(eq(got.c,want.c)&&got.v===want.v));
+}
+
+/* ---------- problem builders ---------- */
+function buildDist(out,inside,opts){
+  opts=opts||{};
+  var bare=eq(out.c,R(-1))&&!out.v;
+  var src='<span class="src" data-s="0">'+(bare?"&minus;":htmlTerm(out,opts.dec))+'</span>';
+  if(opts.wrap)src='<span class="paren">(</span>'+src+'<span class="paren">)</span>';
+  var body='<span class="paren">(</span>'+joinTerms(inside,opts.dec)+'<span class="paren">)</span>';
+  var answer=inside.map(function(t){return mulTerm(out,t);});
+  var factor=bare?"-1":plainTerm(out,opts.dec);
+  var qIn="("+plainList(inside,opts.dec)+")",qOut=bare?"-":plainTerm(out,opts.dec);
+  if(opts.wrap)qOut="("+qOut+")";
+  return {
+    qText:pretty(opts.right?qIn+qOut:qOut+qIn),
+    aText:pretty(plainList(answer.filter(function(t){return !isZero(t.c);}),opts.dec)||"0"),
+    kind:"distribute",
+    prompt:opts.prompt||"Distribute",
+    sortDeg:!!opts.sortDeg,
+    html:opts.right?body+src:src+body,
+    dec:!!opts.dec,
+    arcs:[{src:0,terms:inside.map(function(_,i){return i;})}],
+    slots:answer.map(function(a,i){return {label:"from "+pretty(plainTerm(inside[i],opts.dec)),answer:a,source:inside[i],factor:out,anchor:'.term[data-t="'+i+'"]:not([data-g])'};}),
+    hint:opts.hint||(pretty(inside.map(function(t){return "("+factor+")("+plainTerm(t,opts.dec)+")";}).join("  +  "))
+      +(bare?"   A bare minus means \u22121.":""))
+  };
+}
+
+function collect(terms){
+  var order=[],map={};
+  terms.forEach(function(t){
+    var key=t.v||"";
+    if(!(key in map)){map[key]=R(0);order.push(key);}
+    map[key]=add(map[key],t.c);
+  });
+  return order.map(function(k){return {c:map[k],v:k};});
+}
+
+function finishCombine(allTerms,html,prompt,arcs,hint,opts){
+  opts=opts||{};
+  return {
+    kind:"combine",
+    terms:allTerms,
+    qText:opts.qText||"",
+    sum:!!opts.sum,
+    dropParens:!!opts.dropParens,
+    prompt:prompt,
+    html:html,
+    dec:!!opts.dec,
+    story:opts.story||null,
+    arcs:arcs||[],
+    slots:collect(allTerms).map(function(g){
+      return {label:g.v?pretty(g.v)+" terms":"constant",answer:g,source:null,anchor:'.term[data-v="'+g.v+'"]'};
+    }),
+    // step 1 (when there are arrows): one box per arrow, under the term it points at
+    pre:(opts.pre&&!opts.story)?{slots:opts.pre,hint:opts.preHint,line:joinTerms(allTerms,opts.dec)}:null,
+    hint:hint
+  };
+}
+
+function buildSub(left,right,opts){
+  opts=opts||{};
+  var html='<span class="paren">(</span>'+joinTerms(left,opts.dec)+'<span class="paren">)</span>'
+     +' <span class="src" data-s="0">&minus;</span> '
+     +'<span class="paren">(</span>'+joinTerms(right,opts.dec).replace(/data-t="(\d)"/g,'data-t="$1" data-g="1"')+'<span class="paren">)</span>';
+  var arcs=[{src:0,terms:right.map(function(_,i){return i;}),group:1}];
+  var hint=opts.hint||("Multiply each by \u22121: "
+      +pretty(right.map(function(t){return "(-1)("+plainTerm(t,opts.dec)+")";}).join("  ")));
+  var flipped=right.map(function(t){return {c:neg(t.c),v:t.v};});
+  opts.pre=right.map(function(t,i){
+    return {label:"from "+pretty(plainTerm(t,opts.dec)),answer:flipped[i],source:t,anchor:'.term[data-t="'+i+'"][data-g="1"]'};
+  });
+  opts.preHint="Multiply each by \u22121: "
+      +pretty(right.map(function(t){return "(-1)("+plainTerm(t,opts.dec)+")";}).join("   "));
+  if(!opts.hint)hint="Add like terms.";
+  opts.qText=pretty("("+plainList(left,opts.dec)+") - ("+plainList(right,opts.dec)+")");
+  return finishCombine(left.concat(flipped),html,opts.prompt||"Subtract, then combine",arcs,hint,opts);
+}
+
+function buildSum(left,right,opts){
+  opts=opts||{};
+  var P=function(c){return '<span class="paren gp">'+c+'</span>';};
+  var html=P("(")+joinTerms(left,opts.dec)+P(")")
+     +' <span class="op">+</span> '
+     +P("(")+joinTerms(right,opts.dec)+P(")");
+  opts.dropParens=true;
+  var hint=opts.hint||"Add like terms.";
+  opts.sum=true;
+  opts.qText=pretty("("+plainList(left,opts.dec)+") + ("+plainList(right,opts.dec)+")");
+  return finishCombine(left.concat(right),html,opts.prompt||"Add, then combine",[],hint,opts);
+}
+
+/* ---------- the class problems (from expanding.pptx) ---------- */
+function tagged(tag,p){p.tag=tag;return p;}
+var CLASS=[
+  /* practice versions of the notes problems: same skill in each, new numbers */
+  tagged("1",buildDist(T(4),[T(1,1,"x"),T(7)])),
+  tagged("2",buildDist(T(7),[T(3),T(2,1,"d")])),
+  tagged("3",buildDist(T(5,1,"x"),[T(4,1,"x"),T(-1,1,"y")],{
+    hint:"(5x)(4x) = 20x\u00b2 and (5x)(\u2212y) = \u22125xy. Type x2 for x\u00b2."})),
+  tagged("4",buildDist(T(5),[T(3,1,"s"),T(4,1,"k")])),
+  tagged("5",buildDist(T(3),[T(8),T(-1,1,"h")],{right:true,
+    hint:"The 3 multiplies both: (8)(3) and (\u2212h)(3)."})),
+  tagged("6",buildDist(T(-3),[T(2,1,"k"),T(6)])),
+  tagged("7",buildDist(T(-1),[T(4,1,"b"),T(-7)])),
+  tagged("A",buildDist(T(-1,2),[T(6),T(-8),T(2,5,"x")],{
+    hint:"(\u22121/2)(6) = \u22123,  (\u22121/2)(\u22128) = 4,  (\u22121/2)(2/5x) = \u22121/5x"})),
+  tagged("B",buildDist(T(-3,4),[T(8),T(2,9,"m"),T(-12,1,"n")],{
+    hint:"(\u22123/4)(8) = \u22126,  (\u22123/4)(2/9m) = \u22121/6m,  (\u22123/4)(\u221212n) = 9n"})),
+  tagged("C",buildSum([T(1,4,"n"),T(3,4)],[T(-1,8,"n"),T(3,8,"m")],{
+    hint:"1/4n = 2/8n, and 2/8n \u2212 1/8n = 1/8n."})),
+  tagged("D",buildSub([T(4,1,"j"),T(-3,1,"q"),T(1,4)],[T(2),T(-5,1,"j"),T(-1,2,"q")],{
+    hint:"Flip the second group: \u22122 + 5j + 1/2q."})),
+  tagged("E",buildSub([T(-3,1,"r"),T(3,5)],[T(-3,1,"r"),T(-1,5)],{dec:true,
+    hint:"Flip the second group: +3r + 0.2."})),
+  tagged("F",buildSub([T(435,100),T(35,10,"g")],[T(185,100),T(225,100,"g")],{dec:true,
+    prompt:"Write it, then combine",
+    story:"Maya buys a notebook for $4.35 and 3.5 pounds of grapes. Leo buys a pen for $1.85 and 2.25 pounds of grapes. Let g be the price per pound of grapes. How much more did Maya spend?",
+    hint:"Maya minus Leo: (4.35 + 3.5g) \u2212 (1.85 + 2.25g)"}))
+];
+
+/* ---------- random generators ---------- */
+function genDistribute(level){
+  var vs=twoVars(),v=vs[0],v2=vs[1],out,inside;
+  if(level===1){
+    out=T(ri(2,12));
+    inside=pick([
+      [T(1,1,v),T(ri(2,12))],
+      [T(ri(2,9),1,v),T(ri(2,12))],
+      [T(ri(2,12)),T(ri(2,9),1,v)],
+      [T(ri(2,6),1,v),T(ri(2,6),1,v2)]
+    ]);
+  } else if(level===2){
+    var k=ri(1,4);
+    if(k===1)      {out=T(-ri(2,9));  inside=[T(ri(2,9),1,v),T(ri(2,12))];}
+    else if(k===2) {out=T(ri(2,12));  inside=[T(ri(3,12)),T(-ri(1,9),1,v)];}
+    else if(k===3) {out=T(-1);        inside=[T(ri(2,9),1,v),T(-ri(2,12))];}
+    else           {out=T(-ri(2,7));  inside=[T(-ri(2,8),1,v),T(-ri(2,10))];}
+  } else if(level===3){
+    var k3=ri(1,4);
+    if(k3===1)     {out=T(-1,2);       inside=[T(ri(2,8)),T(4,5,v)];}
+    else if(k3===2){out=T(-2,5);       inside=[T(10),T(5,6,v)];}
+    else if(k3===3){out=T(1,2);        inside=[T(ri(2,8)*2,1,v),T(-ri(3,15),5)];}
+    else           {out=T(ri(2,8),10); inside=[T(ri(2,9)*5,10,v),T(ri(2,9)*5,10)];}
+  } else {
+    out=pick([T(-1),T(ri(2,7)),T(-ri(2,7)),T(2,3),T(-1,2)]);
+    inside=[T(ri(2,9),1,v),T(-ri(2,9),1,v2),T(ri(2,12))];
+    if(out.c[1]!==1)inside=inside.map(function(t){return {c:mul(t.c,R(out.c[1])),v:t.v};});
+  }
+  return buildDist(out,inside);
+}
+
+function genCombine(forced){
+  var vs=twoVars(),v=vs[0],v2=vs[1],left,right;
+  var form=forced||pick(["sub","sub","subfrac","distcomb","dec","sum"]);
+
+  if(form==="sub"||form==="subfrac"){
+    var den=pick([2,3,4,5]);
+    left=[T(ri(2,9),1,v),T(-ri(1,6),1,v2),form==="subfrac"?T(ri(1,4),den):T(ri(2,9))];
+    right=[T(ri(2,8)),T(-ri(1,7),1,v),form==="subfrac"?T(-ri(1,4),den,v2):T(-ri(1,8),1,v2)];
+    return buildSub(left,right);
+  }
+  if(form==="dec"){
+    left=[T(-1,1,v),T(ri(1,9),10)];
+    right=[T(-1,1,v),T(-ri(1,9),10)];
+    return buildSub(left,right,{dec:true,hint:"Flip the second group's signs."});
+  }
+  if(form==="sum"){
+    var dn=pick([2,3,6]);
+    left=[T(ri(1,4),dn,v),T(ri(1,4),dn)];
+    right=[T(-ri(1,4),dn,v),T(ri(1,4),dn,v2)];
+    return buildSum(left,right);
+  }
+  var a=ri(2,6),b=ri(2,6);
+  left=[T(ri(2,7),1,v),T(ri(2,9))];
+  right=[T(ri(2,7),1,v),T(-ri(2,9))];
+  var html='<span class="src" data-s="0">'+a+'</span><span class="paren">(</span>'+joinTerms(left)+'<span class="paren">)</span>'
+     +' <span class="op">+</span> '
+     +'<span class="src" data-s="1">'+b+'</span><span class="paren">(</span>'+joinTerms(right).replace(/data-t="(\d)"/g,'data-t="$1" data-g="1"')+'<span class="paren">)</span>';
+  var arcs=[{src:0,terms:[0,1],group:0},{src:1,terms:[0,1],group:1}];
+  var aL=left.map(function(t){return mulTerm(T(a),t);}),bR=right.map(function(t){return mulTerm(T(b),t);});
+  var hint=pretty(a+"("+left.map(function(t){return plainTerm(t);}).join(" + ")+") = "+aL.map(function(t){return plainTerm(t);}).join(" + "))
+     +".   Then "+b+".";
+  var pre=aL.map(function(t,i){return {label:"from "+pretty(plainTerm(left[i])),answer:t,source:left[i],factor:T(a),anchor:'.term[data-t="'+i+'"]:not([data-g])'};})
+    .concat(bR.map(function(t,i){return {label:"from "+pretty(plainTerm(right[i])),answer:t,source:right[i],factor:T(b),anchor:'.term[data-t="'+i+'"][data-g="1"]'};}));
+  return finishCombine(aL.concat(bR),html,"Distribute, then combine",arcs,
+    "Add like terms.",{pre:pre,preHint:hint,
+    qText:pretty(a+"("+plainList(left)+") + "+b+"("+plainList(right)+")")});
+}
+
+/* ---------- multiplying linear expressions ----------
+   Term x term, e.g. (5.2x)(1.9x), and term x binomial, e.g. (−2.5 + 2w)(−6w),
+   in decimals or in fractions. Same arrows: the outside term reaches every term. */
+function degOf(v){var d=0;String(v||"").replace(/[a-z](?:\^(\d+))?/g,function(_,e){d+=e?+e:1;});return d;}
+/* decimals picked for mental math: halves, quarters, small tenths */
+var EASY_DEC=[[1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[8,10],[11,10],[12,10],[15,10],[25,10],[35,10],[25,100],[75,100]];
+function easyDec(){var d=pick(EASY_DEC);return R(d[0],d[1]);}
+function easyWhole(){return R(pick([2,3,4,5,6,8,10,12]));}
+function easyCoef(){return Math.random()<0.3?easyWhole():easyDec();}
+/* 2.5 -> {n:25, p:1}: the digits with the point taken out, and how many places it had */
+function intForm(c){
+  var s=decStr(absC(c)),i=s.indexOf(".");
+  return {n:parseInt(s.replace(".",""),10),p:i<0?0:s.length-i-1};
+}
+/* the digit product is small, or round enough to do in your head (25 x 8 = 200) */
+function easyPair(a,b){
+  var x=intForm(a),y=intForm(b),pr=x.n*y.n;
+  return x.p+y.p<=2&&(pr<=60||(pr%10===0&&pr<=300));
+}
+function isWholeC(c){return c[1]===1;}
+function cancels(a,b){return gcd(Math.abs(a[0]),b[1])>1||gcd(Math.abs(b[0]),a[1])>1;}
+function randWhole(){return R(ri(2,10));}
+function randFracC(){var d=ri(2,5),n;do{n=ri(2,9);}while(gcd(n,d)!==1);return R(n,d);}
+function sgn(c){return Math.random()<0.5?neg(c):c;}
+function absC(c){return c[0]<0?neg(c):c;}
+function signNote(a,b){
+  var n=(a[0]<0?1:0)+(b[0]<0?1:0);
+  return n===1?"One negative: negative.":n===2?"Two negatives: positive.":"";
+}
+function genLinear(level){
+  var v=pick(VARS);
+  if(level===6){
+    var c1,c2;
+    do{c1=easyCoef();c2=easyCoef();}while(!easyPair(c1,c2)||(isWholeC(c1)&&isWholeC(c2)));
+    c1=sgn(c1);c2=sgn(c2);
+    return buildDist({c:c1,v:v},[{c:c2,v:v}],{dec:true,wrap:true,
+      prompt:"Multiply",
+      hint:(signNote(c1,c2)+" "+plainFrac(absC(c1),true)+" \u00d7 "+plainFrac(absC(c2),true)
+        +",  "+v+" \u00b7 "+v+" = "+v+"\u00b2").trim()});
+  }
+  var frac=level===8,wholeChance=frac?0.4:0.3,m,vc,cc;
+  function coefFor(allowOne,forceWhole){
+    if(allowOne&&Math.random()<0.18)return R(1);
+    if(forceWhole||Math.random()<wholeChance)return randWhole();
+    return randFracC();
+  }
+  if(!frac){
+    do{
+      m=easyCoef();vc=Math.random()<0.18?R(1):easyCoef();cc=easyCoef();
+    }while(!easyPair(m,vc)||!easyPair(m,cc)||(isWholeC(m)&&isWholeC(vc)&&isWholeC(cc)));
+    m=sgn(m);vc=sgn(vc);cc=sgn(cc);
+  } else {
+    // at least one product has something to cancel, so Cross simplify has work to do
+    do{m=sgn(coefFor(false,false));vc=sgn(coefFor(true,false));cc=sgn(coefFor(false,false));}
+    while((m[1]===1&&vc[1]===1&&cc[1]===1)||mul(vc,m)[1]>12||mul(cc,m)[1]>12||!(cancels(m,vc)||cancels(m,cc)));
+  }
+  var out={c:m,v:v},vt={c:vc,v:v},ct={c:cc,v:""};
+  var inside=Math.random()<0.5?[vt,ct]:[ct,vt];
+  var left=Math.random()<0.35,dec=!frac;
+  var f=plainTerm(out,dec);
+  return buildDist(out,inside,{dec:dec,right:!left,wrap:!left,
+    prompt:"Distribute",
+    hint:pretty(inside.map(function(t){return "("+f+")("+plainTerm(t,dec)+")";}).join("  +  "))
+      +"   "+v+" \u00b7 "+v+" = "+v+"\u00b2"});
+}
+
+/* ---------- state ---------- */
+var LEVELS=[
+  {id:9,name:"Mixed",full:"A mix of every kind of problem: 20 to turn in"},
+  {id:0,name:"Class",full:"Class problems from the slides",sep:true},
+  {id:1,name:"Whole #",full:"Whole numbers"},
+  {id:2,name:"Neg",full:"Negatives"},
+  {id:3,name:"Frac/Dec",full:"Fractions and decimals"},
+  {id:4,name:"3 Terms",full:"Three terms"},
+  {id:5,name:"Dist + Comb",full:"Distribute and combine like terms"},
+  {id:6,name:"Term \u00d7 Term",full:"Multiplying linear expressions: one term times one term",sep:true},
+  {id:7,name:"Mult: Dec",full:"Multiplying linear expressions: decimals"},
+  {id:8,name:"Mult: Frac",full:"Multiplying linear expressions: fractions"}
+];
+var mode="practice",level=9,classIdx=0,current=null,stepIdx=0;
+function onPre(){return !!(current&&current.pre&&stepIdx===0);}
+function S(){return onPre()?current.pre.slots:current.slots;}
+var done=false,graded=false,hadWrong=false,advT=null;
+var classResult={};
+var hist={},histIdx=0;
+var solved=0,attempted=0,firstTry=0,streak=0,bestStreak=0,hints=0;
+var tally={sign:0,forgot:0,variable:0,arithmetic:0,format:0};
+var TALLY_LABEL={sign:"Sign flipped",forgot:"Term not multiplied",variable:"Variable dropped or added",arithmetic:"Arithmetic slip",format:"Unreadable entry"};
+
+var $=function(id){return document.getElementById(id);};
+function gen(l){
+  if(l===9)return genMixed();
+  return l>=6?genLinear(l):l===5?genCombine():genDistribute(l);
+}
+/* every 20 are dealt from a fresh, freshly shuffled deck holding every kind of
+   problem, so no two sets are alike and doing it again later gives new ones:
+     whole numbers 2, negatives 3, fractions/decimals outside 2, three terms 2,
+     combining 5 (subtract, subtract with a fraction, decimals, two groups
+     distributed, add), term times term 2, decimals 2, fractions 2
+   The same kind never comes twice in a row. After 20 the next deck is dealt. */
+var MIX=[[1],[1],[2],[2],[2],[3],[3],[4],[4],
+  [5,"sub"],[5,"subfrac"],[5,"dec"],[5,"distcomb"],[5,"sum"],
+  [6],[6],[7],[7],[8],[8]],mixDeck=[],mixLast=-1;
+function refillMix(){
+  var d=MIX.slice();
+  for(var i=d.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=d[i];d[i]=d[j];d[j]=t;}
+  mixDeck=d;
+}
+function genMixed(){
+  if(!mixDeck.length)refillMix();
+  var i=0;
+  while(i<mixDeck.length-1&&mixDeck[i][0]===mixLast)i++;
+  var card=mixDeck.splice(i,1)[0];
+  mixLast=card[0];
+  var p=card[0]===5?genCombine(card[1]):gen(card[0]);
+  p.mixKind=card[0];
+  return p;
+}
+
+/* ---------- the finished answer, written out ---------- */
+function finalHtml(p){
+  var terms=p.slots.map(function(s){return s.answer;}).filter(function(t){return !isZero(t.c);});
+  if(p.sortDeg)terms=terms.map(function(t,i){return {t:t,i:i};})
+    .sort(function(a,b){return degOf(b.t.v)-degOf(a.t.v)||a.i-b.i;}).map(function(o){return o.t;});
+  if(p.kind==="combine")terms=terms.filter(function(t){return t.v;}).concat(terms.filter(function(t){return !t.v;}));
+  if(!terms.length)return '<span class="eqs">=</span>0';
+  return '<span class="eqs">=</span>'+terms.map(function(t,i){
+    if(i===0)return htmlTerm(t,p.dec);
+    return '<span class="op"> '+(t.c[0]<0?"&minus;":"+")+' </span>'+htmlAbsTerm(t,p.dec);
+  }).join("");
+}
+function showFinal(){
+  var box=$("slots");
+  box.classList.remove("flow");
+  box.innerHTML='<div class="final" id="final">'+finalHtml(current)+'</div>';
+  if(!$("exprwrap").hidden)$("expr").classList.add("answered");
+  sizeFinal();
+}
+function sizeFinal(){
+  var el=$("final");if(!el)return;
+  var box=$("slots"),exprFs=parseFloat($("expr").style.fontSize)||60;
+  var fs=Math.round($("exprwrap").hidden?Math.max(34,Math.min(72,window.innerHeight*0.075)):exprFs);
+  el.style.fontSize=fs+"px";
+  while(el.scrollWidth>box.clientWidth&&fs>22){fs-=2;el.style.fontSize=fs+"px";}
+}
+
+/* ---------- written out: the numbers first, then the letters, one at a time ----------
+   (-0.2n)(-6n) reads as  -0.2 · -6 · n · n  */
+function rewriteHtml(s,dec){
+  var out=s.factor,t=s.source,parts=[];
+  [out,t].forEach(function(x){if(!isOne(x.c))parts.push('<span class="rp'+(x===out?' ro':'')+'" data-r="'+(x===out?'f':'t')+'">'+htmlFrac(x.c,dec)+'</span>');});
+  [out,t].forEach(function(x){
+    String(x.v||"").replace(/([a-z])(?:\^(\d+))?/g,function(_,L,e){for(var k=0;k<(e?+e:1);k++)parts.push(x===out?'<span class="ro">'+L+'</span>':L);});
+  });
+  if(!parts.length)parts.push("1");
+  return parts.join(' <span class="rx">&middot;</span> ');
+}
+
+/* which written line shows, and the cancelling from Cross simplify copied into it */
+function rwSync(){
+  if(!current)return;
+  var a=document.activeElement;
+  S().forEach(function(s,i){
+    var wrap=$("slot"+i),rw=wrap&&wrap.querySelector(".rw");
+    if(!rw)return;
+    var cs=csOn&&csSlot===i;
+    wrap.classList.toggle("rwon",!!(a&&wrap.contains(a))||cs);
+    rw.innerHTML=rewriteHtml(s,current.dec);
+    if(!cs)return;
+    csItems.forEach(function(it){
+      var box=$(it.id);
+      if(!box||!box.classList.contains("ok")||!it.role)return;
+      var root=rw.querySelector('[data-r="'+it.role.charAt(0)+'"]');
+      var el=it.role.charAt(1)==="n"?csNum(root):csDen(root);
+      if(!el)return;
+      el.classList.add("cut");
+      var nw=document.createElement("span");
+      nw.className="rwnew "+(it.up?"up":"down");nw.textContent=it.want;
+      el.appendChild(nw);
+    });
+  });
+}
+document.addEventListener("focusin",function(){setTimeout(function(){rwSync();tlUpdate(false);},0);});
+document.addEventListener("focusout",function(){setTimeout(rwSync,0);});
+
+/* ---------- keep the cursor in the first open box ---------- */
+function focusFirst(){
+  if(mode!=="practice"||done||!current||turninOpen())return;
+  var a=document.activeElement;
+  if(a&&a.classList&&a.classList.contains("csbox"))return;
+  if(a&&a.tagName==="INPUT"&&a.id.indexOf("in")===0&&!slotIsRight(+a.id.slice(2)))return;
+  var csOpen=csFirstOpen();
+  if(csOpen){csOpen.focus({preventScroll:true});return;}
+  for(var j=0;j<S().length;j++){
+    var el=$("in"+j);
+    if(el&&!slotIsRight(j)&&!zeroPending(j)){el.focus({preventScroll:true});return;}
+  }
+}
+function zeroPending(j){var w=$("slot"+j);return !!w&&w.classList.contains("zeroslot")&&!slotIsRight(j);}
+function zeroPrompt(){
+  var n=$("note");n.className="note";
+  n.textContent="Click the terms that are left.";
+}
+
+/* ---------- render ---------- */
+var dropT=[];
+function dropParens(p){
+  dropT.forEach(clearTimeout);dropT=[];
+  if(!p.dropParens)return;
+  dropT.push(setTimeout(function(){
+    if(current!==p)return;
+    [].forEach.call($("expr").querySelectorAll(".paren.gp"),function(e){e.classList.add("fade");});
+    dropT.push(setTimeout(function(){
+      if(current!==p)return;
+      [].forEach.call($("expr").querySelectorAll(".paren.gp"),function(e){e.classList.add("gone");});
+      layoutExpr();
+    },450));
+  },2000));
+}
+/* adding changes nothing inside a group, so after a moment the parentheses
+   fall away and leave the terms, with the + between the groups kept */
+function sumDrop(p,instant){
+  var ex=$("expr");
+  ex.classList.add("sumdark");
+  var ps=[].slice.call(ex.querySelectorAll(".paren"));
+  var end=function(){
+    if(current!==p)return;
+    ps.forEach(function(el){el.style.display="none";});
+    layoutExpr();ctPaint();
+  };
+  if(instant){end();return;}
+  setTimeout(function(){
+    if(current!==p)return;
+    ps.forEach(function(el){
+      el.style.transition="transform .45s ease-in, opacity .45s ease-in";
+      el.style.transform="translateY(.6em)";el.style.opacity="0";
+    });
+    setTimeout(function(){
+      if(current!==p)return;
+      ps.forEach(function(el){el.style.transition="font-size .35s ease-in-out";el.style.fontSize="0";});
+      /* the boxes follow their terms as the gaps close */
+      var t0=Date.now();
+      (function follow(){
+        if(current!==p)return;
+        placeSlots(parseFloat(ex.style.fontSize)||60);
+        if(Date.now()-t0<380)requestAnimationFrame(follow);else end();
+      })();
+    },460);
+  },2000);
+}
+function show(p){
+  stepping=false;
+  $("expr").classList.remove("sumdark");
+  dropParens(p);
+  setTimeout(setCount,0);
+  current=p;stepIdx=0;done=false;graded=false;hadWrong=false;clearTimeout(advT);arcShown=0;firstDraw=true;
+  var preview=mode==="preview";
+
+  $("prompt").textContent=p.prompt;
+  var story=$("story");
+  if(p.story){story.textContent=p.story;story.hidden=false;}else{story.hidden=true;}
+  $("exprwrap").hidden=!!(p.story&&!preview);
+  $("expr").innerHTML=p.html+'<span class="eqs">=</span>';
+  paintStrip();
+
+  $("expr").classList.remove("answered");
+  var l2=$("line2");l2.hidden=true;l2.innerHTML="";
+  $("slots").innerHTML="";
+  if(preview){if(p.pre)showLine2();}
+  else buildInputs(S());
+  ctEls=[];
+
+  $("check").hidden=preview;
+  ["prev","next"].forEach(function(id){$(id).hidden=!preview;});
+  $("check").textContent="Check";
+  var note=$("note");note.className="note";note.textContent="";
+
+  csClear();activeIdx=0;
+  csSync();
+  tlBuild();
+  layoutExpr();
+  if(preview)showFinal();else ctSetup();
+  if(p.sum&&!$("exprwrap").hidden)sumDrop(p,preview);
+  if(!preview){
+    focusFirst();
+    // again after layout settles, in case the browser moved focus while redrawing
+    setTimeout(focusFirst,0);
+    requestAnimationFrame(focusFirst);
+  }
+}
+
+function buildInputs(list){
+  var slots=$("slots");
+  slots.innerHTML="";
+  list.forEach(function(s,i){
+    var wrap=document.createElement("div");
+    wrap.className="slot";wrap.id="slot"+i;
+    var lab=document.createElement("label");
+    lab.textContent=s.label;lab.setAttribute("for","in"+i);
+    var inp=document.createElement("input");
+    inp.type="text";inp.id="in"+i;inp.placeholder="?";
+    ["autocomplete","autocapitalize","autocorrect"].forEach(function(a){inp.setAttribute(a,"off");});
+    inp.setAttribute("spellcheck","false");
+    var msg=document.createElement("div");
+    msg.className="msg";msg.id="msg"+i;
+    var mir=document.createElement("div");
+    mir.className="mirror";mir.setAttribute("aria-hidden","true");
+    inp.classList.add("mirrored");
+    var redraw=function(){drawMirror(inp,mir);};
+    inp.addEventListener("input",function(){raiseExponents(inp);onType(i,inp,wrap,msg);redraw();});
+    ["focus","blur","keyup","keydown","mouseup","select"].forEach(function(ev){inp.addEventListener(ev,function(){setTimeout(redraw,0);});});
+    inp.addEventListener("focus",function(){
+      activeIdx=i;
+      if(csWant&&csSlot!==i)csStart(i,false);
+    });
+    var field=document.createElement("span");
+    field.className="field";field.appendChild(inp);field.appendChild(mir);
+    wrap.appendChild(lab);
+    if(s.factor&&s.source){
+      var rw=document.createElement("div");
+      rw.className="rw";rw.setAttribute("aria-hidden","true");
+      rw.innerHTML=rewriteHtml(s,current.dec);
+      wrap.appendChild(rw);
+    }
+    wrap.appendChild(field);wrap.appendChild(msg);
+    slots.appendChild(wrap);
+  });
+  slots.classList.toggle("rwtall",!!slots.querySelector(".rw .frac"));
+}
+function showLine2(){
+  var l2=$("line2");
+  l2.innerHTML='<span class="eqs">=</span>'+current.pre.line;
+  l2.hidden=false;
+  $("expr").classList.add("answered");
+}
+/* step 1 done: write it out as a line, then box up the like terms under that line */
+function nextStep(){
+  stepIdx=1;clearTimeout(advT);
+  showLine2();
+  buildInputs(current.slots);
+  var note=$("note");note.className="note";note.textContent="";
+  csSync();
+  tlBuild();
+  layoutExpr();
+  ctSetup();
+  focusFirst();setTimeout(focusFirst,0);
+}
+
+function paintStrip(){
+  var strip=$("strip");
+  strip.innerHTML="";
+  if(level!==0)return;
+  CLASS.forEach(function(p,i){
+    var b=document.createElement("button");
+    b.type="button";b.className="chip"+(classResult[p.tag]?" done":"");
+    if(classResult[p.tag]==="missed")b.className="chip";
+    b.textContent=p.tag;
+    b.setAttribute("aria-label","Problem "+p.tag);
+    if(i===classIdx)b.setAttribute("aria-current","true");
+    b.addEventListener("click",function(){classIdx=i;show(CLASS[i]);});
+    strip.appendChild(b);
+  });
+}
+
+/* ---------- sizing the expression, then lining boxes up under it ---------- */
+function layoutExpr(){
+  var wrap=$("exprwrap"),el=$("expr"),fs=0;
+  if(!wrap.hidden){
+    el.classList.remove("wrapok");
+    var avail=wrap.clientWidth-8;
+    var l2=$("line2"),two=!!current.pre||csOn;
+    fs=Math.round(Math.max(30,Math.min(96,window.innerHeight*(two?0.072:0.09),window.innerWidth*0.065)));
+    var set=function(){el.style.fontSize=fs+"px";l2.style.fontSize=fs+"px";};
+    var tooWide=function(){return el.scrollWidth>avail||(!l2.hidden&&l2.scrollWidth>avail);};
+    set();
+    while(tooWide()&&fs>24){fs-=2;set();}
+    if(el.scrollWidth>avail)el.classList.add("wrapok");
+    wrap.style.paddingTop=Math.round(fs*1.05)+"px";
+    if(!csOn)wrap.style.paddingBottom="";
+  }
+  placeSlots(fs);
+  drawArcs(fs);
+  csPlace(fs);
+}
+
+function placeSlots(fs){
+  var box=$("slots"),items=[].slice.call(box.querySelectorAll(".slot"));
+  function flow(){
+    box.classList.add("flow");box.style.minHeight="";
+    items.forEach(function(el){el.style.left="";el.style.width="";});
+  }
+  if(!items.length){sizeFinal();return;}
+  box.classList.remove("flow");
+  var wrap=(current.pre&&stepIdx===1)?$("line2"):$("exprwrap");
+  if(!fs||wrap.hidden||$("exprwrap").hidden||$("expr").classList.contains("wrapok"))return flow();
+
+  var sb=box.getBoundingClientRect();
+  var W=Math.round(Math.min(200,Math.max(118,fs*2.2)));
+  var xs=S().map(function(s){
+    var a=s.anchor&&wrap.querySelector(s.anchor);
+    if(!a)return null;
+    var r=a.getBoundingClientRect();
+    return r.left-sb.left+r.width/2;
+  });
+  if(xs.some(function(x){return x===null;}))return flow();
+
+  var order=xs.map(function(_,i){return i;}).sort(function(a,b){return xs[a]-xs[b];});
+  var gap=10,lefts=[],prevRight=-Infinity;
+  /* each box is no wider than the room between its term and the next, so every
+     box stays centred directly under the term it belongs to */
+  for(var k=1;k<order.length;k++)W=Math.min(W,xs[order[k]]-xs[order[k-1]]-gap);
+  /* ...and no wider than it can be while still centred at the edges */
+  W=Math.min(W,2*xs[order[0]],2*(sb.width-xs[order[order.length-1]]));
+  W=Math.round(Math.max(56,W));
+  order.forEach(function(i,k){
+    var l=xs[i]-W/2;
+    if(k===0)l=Math.max(0,l);
+    l=Math.max(l,prevRight+gap);
+    lefts[i]=l;prevRight=l+W;
+  });
+  var over=prevRight-sb.width;
+  if(over>0){
+    lefts=lefts.map(function(l){return l-over;});
+    if(Math.min.apply(null,lefts)<0)return flow();
+  }
+  items.forEach(function(el,i){
+    el.style.left=Math.round(lefts[i])+"px";el.style.width=W+"px";
+    var inp=el.querySelector("input");if(inp)inp.style.fontSize=W<120?Math.max(20,Math.round(W*0.24))+"px":"";
+  });
+  /* the answer boxes float, so make room for the tallest one before the buttons */
+  var hmax=0;items.forEach(function(el){hmax=Math.max(hmax,el.offsetHeight);});
+  box.style.minHeight=hmax+"px";
+}
+
+/* arrows: in Practice they appear one at a time, one more each time a box is right */
+var segs=[],arcShown=0,firstDraw=false;
+function drawArcs(fs){
+  var svg=$("arcs"),wrap=$("exprwrap");
+  svg.innerHTML="";segs=[];
+  if(!current||!current.arcs.length||wrap.hidden)return;
+  fs=fs||parseFloat($("expr").style.fontSize)||60;
+  var box=wrap.getBoundingClientRect();
+  svg.setAttribute("viewBox","0 0 "+box.width+" "+box.height);
+  var sw=Math.max(1.8,fs*0.04);
+
+  current.arcs.forEach(function(arc){
+    var src=wrap.querySelector('.src[data-s="'+arc.src+'"]');
+    if(!src)return;
+    var sb=src.getBoundingClientRect();
+    var x1=sb.left-box.left+sb.width/2,y1=sb.top-box.top+fs*0.12;
+
+    arc.terms.forEach(function(ti){
+      var sel=arc.group===1?'.term[data-t="'+ti+'"][data-g="1"]':'.term[data-t="'+ti+'"]:not([data-g])';
+      var el=wrap.querySelector(sel);
+      if(!el)return;
+      var tb=el.getBoundingClientRect();
+      var x2=tb.left-box.left+tb.width/2,y2=tb.top-box.top+fs*0.12;
+      if(Math.abs(x2-x1)<2)return;
+
+      var lift=Math.min(fs*0.95,16+Math.abs(x2-x1)*0.22);
+      var path=document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute("d","M "+x1+" "+y1+" C "+x1+" "+(y1-lift)+", "+x2+" "+(y2-lift)+", "+x2+" "+y2);
+      path.setAttribute("fill","none");
+      path.setAttribute("stroke","var(--pen)");
+      path.setAttribute("stroke-width",sw);
+      path.setAttribute("stroke-linecap","round");
+      /* each arrow in its own group, so it can fade once that piece is answered */
+      var grp=document.createElementNS("http://www.w3.org/2000/svg","g");
+      svg.appendChild(grp);
+      grp.appendChild(path);
+
+      var ang=Math.atan2(lift,x2>x1?lift*0.013:-lift*0.013);
+      var s=Math.max(6,fs*0.13);
+      var head=document.createElementNS("http://www.w3.org/2000/svg","path");
+      head.setAttribute("d","M "+x2+" "+y2+" L "+(x2-s*Math.cos(ang-0.45))+" "+(y2-s*Math.sin(ang-0.45))
+        +" M "+x2+" "+y2+" L "+(x2-s*Math.cos(ang+0.45))+" "+(y2-s*Math.sin(ang+0.45)));
+      head.setAttribute("fill","none");
+      head.setAttribute("stroke","var(--pen)");
+      head.setAttribute("stroke-width",sw);
+      head.setAttribute("stroke-linecap","round");
+      grp.appendChild(head);
+
+      var len=path.getTotalLength();
+      path.style.strokeDasharray=len;
+      path.style.strokeDashoffset=len;
+      head.style.opacity="0";
+      segs.push({path:path,head:head,g:grp,on:false});
+    });
+  });
+  revealArcs(firstDraw?undefined:false);firstDraw=false;
+}
+
+function wantedArcs(){
+  if(mode==="preview"||done||(current.pre&&stepIdx===1))return segs.length;
+  var right=0;
+  for(var j=0;j<S().length;j++)if(slotIsRight(j))right++;
+  return right+1;
+}
+function revealArcs(animate){
+  arcShown=Math.max(arcShown,wantedArcs());
+  var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var n=0;
+  segs.forEach(function(sg,i){
+    if(i>=arcShown||sg.on)return;
+    sg.on=true;
+    var p=sg.path,h=sg.head;
+    if(animate===false||reduce){
+      p.style.transition="none";h.style.transition="none";
+      p.style.strokeDashoffset="0";h.style.opacity="1";
+      return;
+    }
+    p.style.transition="stroke-dashoffset .42s ease-out";
+    p.style.transitionDelay=(n*0.14)+"s";
+    h.style.transition="opacity .18s linear";
+    h.style.transitionDelay=(n*0.14+0.36)+"s";
+    n++;
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      p.style.strokeDashoffset="0";h.style.opacity="1";
+    });});
+  });
+  /* an arrow has done its job once its answer is right: fade it out (the preview keeps them all) */
+  segs.forEach(function(sg,i){
+    var gone=mode!=="preview"&&!(current.pre&&stepIdx===1)&&(done||slotIsRight(i));
+    sg.g.style.transition=reduce?"none":"opacity .35s ease-out";
+    sg.g.style.opacity=gone?"0":"1";
+  });
+}
+
+/* ---------- live checking + auto-advance ---------- */
+function onType(i,inp,wrap,msg){
+  onTypeCore(i,inp,wrap,msg);
+  ctPaint();
+  rwSync();
+  tlUpdate(false);
+}
+/* a mixed number, like -5 1/2q: read it so a right value can be recognised,
+   but it is never accepted as the answer */
+function mixedTerm(raw){
+  var m=String(raw).trim().replace(/[\u2212\u2013\u2014]/g,"-")
+    .match(/^([+-]?)\s*(\d+)\s+(\d+)\s*\/\s*(\d+)\s*(\S*)$/);
+  if(!m||+m[4]===0)return null;
+  var c=add(R(+m[2]),R(+m[3],+m[4]));
+  if(m[1]==="-")c=neg(c);
+  var v="";
+  if(m[5]){var t=parseTerm(m[5]);if(!t||!isOne(t.c))return null;v=t.v;}
+  return {c:c,v:v};
+}
+/* which box holds the term written first in the answer: that one may go
+   without a sign; every positive term after it needs its + */
+function firstSlot(){
+  var list=S();
+  if(onPre()){
+    /* a subtracted group's terms follow the first group on the line, so none of
+       them comes first; after distributing two groups, the very first product does */
+    return list.length&&list[0].factor?0:-1;
+  }
+  var live=list.map(function(sl,i){return {i:i,t:sl.answer};}).filter(function(o){return !isZero(o.t.c);});
+  if(current.kind==="combine")live=live.filter(function(o){return o.t.v;}).concat(live.filter(function(o){return !o.t.v;}));
+  return live.length?live[0].i:-1;
+}
+function needsPlus(i){
+  var sl=S()[i];
+  return !!sl&&!isZero(sl.answer.c)&&sl.answer.c[0]>0&&i!==firstSlot();
+}
+function plusMissing(raw,i){return needsPlus(i)&&!/^\s*\+/.test(raw);}
+var PLUS_MSG="Add the + sign";
+var MIXED_MSG="Use an improper fraction or decimal";
+function isMixedRight(raw,want){var t=mixedTerm(raw);return !!t&&isRight(t,want);}
+function onTypeCore(i,inp,wrap,msg){
+  wrap.className="slot";msg.textContent="";
+  clearTimeout(advT);
+  if(done)return;
+  var raw=inp.value.trim();
+  if(raw&&isMixedRight(raw,S()[i].answer)){msg.textContent=MIXED_MSG;return;}
+  if(!raw||!isRight(parseTerm(raw),S()[i].answer))return;
+  if(plusMissing(raw,i)){msg.textContent=PLUS_MSG;return;}
+  wrap.className="slot is-right";
+  revealArcs();
+  // a trailing digit might still be growing (5.2 -> 5.25), so give it a beat
+  var delay=/\d$/.test(raw)?450:0;
+  advT=setTimeout(function(){
+    if(inp.value.trim()!==raw||done)return;
+    advanceFrom(i);
+  },delay);
+}
+function slotIsRight(j){var w=$("slot"+j);return w&&w.classList.contains("is-right");}
+function advanceFrom(i){
+  var n=S().length;
+  for(var k=1;k<=n;k++){
+    var j=(i+k)%n;
+    if(!slotIsRight(j)&&!zeroPending(j)){
+      var el=$("in"+j);el.focus();el.select();
+      var o=csFirstOpen();
+      if(o)o.focus({preventScroll:true});
+      return;
+    }
+  }
+  for(var z=0;z<n;z++)if(zeroPending(z)){zeroPrompt();return;}
+  complete();
+}
+
+function classify(got,want,source){
+  if(!got)return "format";
+  if(got.v!==want.v&&!isZero(want.c))return "variable";
+  if(eq(got.c,neg(want.c))&&!isZero(want.c))return "sign";
+  if(source&&eq(got.c,source.c)&&got.v===source.v)return "forgot";
+  return "arithmetic";
+}
+function messageFor(type,want){
+  if(type==="format")return "Try like -2/5m";
+  if(type==="variable")return want.v?"Needs "+pretty(want.v):"No variable";
+  if(type==="sign")return "Wrong sign";
+  if(type==="forgot")return "Multiply this too";
+  return "Check the math";
+}
+
+function check(){
+  if(mode==="preview")return;
+  if(done){next();return;}
+  clearTimeout(advT);
+  var allRight=true,firstBad=null,anyEmpty=false,mistakes=[],zeroLeft=false,mixedAny=false,plusAny=false;
+
+  S().forEach(function(s,i){
+    if(zeroPending(i)){allRight=false;zeroLeft=true;return;}
+    var inp=$("in"+i),wrap=$("slot"+i),msg=$("msg"+i);
+    var raw=inp.value.trim();
+    if(!raw){
+      wrap.className="slot is-wrong";msg.textContent="Empty";
+      anyEmpty=true;allRight=false;
+      if(!firstBad)firstBad=inp;
+      return;
+    }
+    var got=parseTerm(raw);
+    if(isRight(got,s.answer)&&plusMissing(raw,i)){
+      allRight=false;plusAny=true;wrap.className="slot is-wrong";msg.textContent=PLUS_MSG;
+      if(!firstBad)firstBad=inp;
+      return;
+    }
+    if(isRight(got,s.answer)){wrap.className="slot is-right";msg.textContent="";return;}
+    allRight=false;
+    /* the right amount as a mixed number is a reminder, not a mistake */
+    if(isMixedRight(raw,s.answer)){
+      mixedAny=true;wrap.className="slot is-wrong";msg.textContent=MIXED_MSG;
+      if(!firstBad)firstBad=inp;
+      return;
+    }
+    var type=classify(got,s.answer,s.source);
+    mistakes.push(type);
+    wrap.className="slot is-wrong";
+    msg.textContent=messageFor(type,s.answer);
+    if(!firstBad)firstBad=inp;
+  });
+
+  revealArcs();rwSync();tlUpdate(false);
+  if(allRight){complete();return;}
+  if(plusAny&&!mixedAny&&!mistakes.length){
+    var np=$("note");np.className="note";np.textContent="";
+    firstBad.focus();return;
+  }
+  if(mixedAny&&!mistakes.length){
+    var nt=$("note");nt.className="note";
+    nt.textContent="Write 5 1/2 as 11/2 or 5.5.";
+    firstBad.focus();return;
+  }
+  if(zeroLeft&&!anyEmpty&&!mistakes.length){zeroPrompt();return;}
+  if(anyEmpty){firstBad.focus();return;}
+
+  if(!graded){
+    graded=true;attempted++;streak=0;
+    mistakes.forEach(function(t){tally[t]++;});
+    if(level===0&&!classResult[current.tag])classResult[current.tag]="missed";
+    paintStats();
+  }
+  hadWrong=true;
+  hints++;paintStats();
+  showHint();
+  firstBad.focus();firstBad.select();
+}
+
+function complete(){
+  if(done)return;
+  if(onPre()){
+    revealArcs();
+    if(stepping)return;
+    /* let the last column of tiles land before the line is rewritten */
+    if(tlShown()&&TL.kind==="area"){
+      stepping=true;tlUpdate(false);
+      var p=current;
+      setTimeout(function(){stepping=false;if(current===p&&stepIdx===0&&mode==="practice")nextStep();},1000);
+      return;
+    }
+    nextStep();return;
+  }
+  done=true;clearTimeout(advT);
+  revealArcs();
+  if(!graded){graded=true;attempted++;firstTry++;streak++;bestStreak=Math.max(bestStreak,streak);}
+  solved++;
+  if(level===9&&mode==="practice")recordMixed();
+  if(level===0){
+    var prev=classResult[current.tag];
+    classResult[current.tag]=hadWrong?(prev==="first"?"first":"fixed"):"first";
+    paintStrip();
+  }
+  paintStats();
+  var note=$("note");
+  note.className="note good";
+  note.textContent="Correct!";
+  ctFinish();
+  tlUpdate(false);
+  showFinal();
+  csSync();
+  $("check").textContent=(level===9&&records.length===GOAL&&!sentOn)?"Turn in my work":"Next";
+  $("check").focus({preventScroll:true});
+}
+
+function next(){
+  if(level===9&&records.length===GOAL&&!sentOn){sentOn=true;showTurnIn();return;}
+  if(level===0){classIdx=(classIdx+1)%CLASS.length;show(CLASS[classIdx]);}
+  else show(gen(level));
+}
+
+function step(d){
+  if(level===0){classIdx=(classIdx+d+CLASS.length)%CLASS.length;show(CLASS[classIdx]);return;}
+  var h=hist[level]||(hist[level]=[current]);
+  histIdx=Math.max(0,histIdx+d);
+  if(histIdx>=h.length)h.push(gen(level));
+  show(h[histIdx]);
+}
+
+function showHint(){
+  var note=$("note");
+  note.className="note";
+  note.textContent=onPre()?current.pre.hint:current.hint;
+  if(mode==="practice")for(var j=0;j<S().length;j++){if(!slotIsRight(j)){$("in"+j).focus();break;}}
+}
+
+/* ---------- picking like terms ----------
+   Once the parentheses are gone, the terms on the line can be clicked. Picking
+   one starts a family; the rest of that family must be picked before the box
+   for it opens. A term from a different family is refused with a shake. */
+var ctEls=[],ctFam=[],ctPicked={},ctCur=null;
+
+function ctLine(){
+  if(!current||current.kind!=="combine"||mode!=="practice")return null;
+  if(current.pre)return stepIdx===1?$("line2"):null;
+  return $("exprwrap").hidden?null:$("exprwrap");
+}
+function ctFamIdx(v){
+  var list=S();
+  for(var j=0;j<list.length;j++)if(list[j].answer&&list[j].answer.v===v)return j;
+  return -1;
+}
+function ctSetup(){
+  ctEls=[];ctFam=[];ctPicked={};ctCur=null;
+  var box=ctLine();
+  if(!box||done)return;
+  var list=[].slice.call(box.querySelectorAll(".term"));
+  if(list.length<2)return;
+  list.forEach(function(el,k){
+    ctEls.push(el);ctFam.push(el.getAttribute("data-v")||"");
+    el.classList.add("pickable");
+    el.setAttribute("data-k",k);
+    el.setAttribute("tabindex","0");
+    el.setAttribute("role","button");
+  });
+  var n=$("note");
+  S().forEach(function(s,j){
+    if(s.answer&&isZero(s.answer.c)&&$("slot"+j))$("slot"+j).classList.add("zeroslot");
+  });
+  if(!n.textContent){n.className="note";n.textContent="Click like terms, then add.";}
+  ctPaint();
+}
+function ctOpEl(el){
+  var o=el.previousElementSibling;
+  return (o&&o.classList.contains("op"))?o:null;
+}
+function ctPaint(){
+  if(!ctEls.length||done)return;
+  var fin={},list=S(),j;
+  for(j=0;j<list.length;j++)if(slotIsRight(j)&&list[j].answer)fin[list[j].answer.v]=true;
+  if(ctCur!==null&&fin[ctCur])ctCur=null;
+  ctEls.forEach(function(el,k){
+    var v=ctFam[k],op=ctOpEl(el),on=[];
+    if(fin[v]){delete ctPicked[k];on=["tdone","f"+((ctFamIdx(v)+4)%4)];}
+    else if(ctPicked[k])on=["tpick","f"+((ctFamIdx(v)+4)%4)];
+    ["tdone","tpick","f0","f1","f2","f3"].forEach(function(c){
+      el.classList.remove(c);if(op)op.classList.remove(c);
+    });
+    on.forEach(function(c){el.classList.add(c);if(op)op.classList.add(c);});
+  });
+}
+function ctReady(){
+  if(ctCur===null)return false;
+  for(var k=0;k<ctFam.length;k++)if(ctFam[k]===ctCur&&!ctPicked[k])return false;
+  return true;
+}
+function ctShake(el){
+  el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");
+  setTimeout(function(){el.classList.remove("shake");},420);
+}
+function ctPick(el){
+  if(done)return;
+  var k=+el.getAttribute("data-k"),v=ctFam[k],j=ctFamIdx(v);
+  if(j<0)return;
+  if(slotIsRight(j))return;                 // that family is already written down
+  if(ctPicked[k]){
+    if(TL.locked[k])return;                 // its tiles have already cancelled
+    delete ctPicked[k];
+    if(!Object.keys(ctPicked).length)ctCur=null;
+    ctPaint();return;
+  }
+  if(ctCur!==null&&v!==ctCur){ctShake(el);return;}
+  ctCur=v;ctPicked[k]=true;
+  ctPaint();
+  if(ctReady()&&zeroPending(j)){ctZero(j,v);return;}
+  if(ctReady()){
+    var inp=$("in"+j);
+    if(inp){inp.focus();inp.select();}
+    var n=$("note");n.className="note";
+    n.textContent=v?("Add the "+pretty(v)+" terms."):"Add the numbers.";
+  }
+}
+/* opposites: nothing to type. They cancel (the tiles show it when they are on),
+   are crossed out, and the problem carries on */
+function ctZero(j,v){
+  var n=$("note");n.className="note";
+  n.textContent="Opposites cancel.";
+  var wait=(tlShown()&&TL.kind==="fam")?T_WAIT+T_MOVE+T_HOLD+T_FADE+300:500;
+  var p=current;
+  setTimeout(function(){
+    if(current!==p||done||!zeroPending(j)||ctCur!==v||!ctReady())return;
+    var inp=$("in"+j),wrap=$("slot"+j);
+    if(inp)inp.value="0";
+    if(wrap)wrap.className="slot is-right zeroslot";
+    ctEls.forEach(function(el,k){
+      if(ctFam[k]!==v)return;
+      el.classList.add("tgone");
+      var o=ctOpEl(el);if(o)o.classList.add("tgone");
+    });
+    ctPicked={};ctCur=null;
+    ctPaint();revealArcs();tlUpdate(false);
+    n.className="note";n.textContent="";
+    advanceFrom(j);
+  },wait);
+}
+function ctFinish(){
+  ctPicked={};ctCur=null;
+  ctEls.forEach(function(el,k){
+    var op=ctOpEl(el);
+    el.classList.remove("pickable","tpick");el.classList.add("tdone");
+    el.removeAttribute("tabindex");
+    if(op){op.classList.remove("tpick");op.classList.add("tdone");}
+  });
+}
+
+/* ---------- cross simplify, written straight onto the expression ----------
+   Boxes appear only on the numbers that actually cancel: the shared factor is
+   divided out and what is left gets written above the top number and below the
+   bottom one, the way it is done on paper. */
+var activeIdx=0,csOn=false,csWant=false,csSlot=-1,csT=null,csItems=[];
+
+function csNum(root){
+  if(!root)return null;
+  var fr=root.querySelector(".frac");
+  return fr?fr.querySelector(".num"):root.querySelector(".whole");
+}
+function csDen(root){
+  if(!root)return null;
+  var fr=root.querySelector(".frac");
+  return fr?fr.querySelector(".den"):null;
+}
+/* what cancels against what, for the answer box at index i */
+function csTargets(i){
+  var s=S()[i],wrap=$("exprwrap");
+  if(!s||!s.factor||!s.source||wrap.hidden||current.dec)return null;
+  var f=s.factor.c,g=s.source.c;
+  if(!f[0]||!g[0])return null;
+  var A=Math.abs(f[0]),B=f[1],C=Math.abs(g[0]),D=g[1];
+  var g1=gcd(A,D),g2=gcd(C,B);
+  if(g1===1&&g2===1)return null;
+  var src=wrap.querySelector('.src[data-s="'+(s.srcIdx||0)+'"]');
+  var term=s.anchor?wrap.querySelector(s.anchor):null;
+  if(!src||!term)return null;
+  var fn=csNum(src),fd=csDen(src),tn=csNum(term),td=csDen(term),items=[];
+  if(g1>1){
+    if(!fn||!td)return null;
+    items.push({el:fn,want:A/g1,up:true,pair:0,by:g1,role:"fn"});
+    items.push({el:td,want:D/g1,up:false,pair:0,by:g1,role:"td"});
+  }
+  if(g2>1){
+    if(!tn||!fd)return null;
+    items.push({el:tn,want:C/g2,up:true,pair:1,by:g2,role:"tn"});
+    items.push({el:fd,want:B/g2,up:false,pair:1,by:g2,role:"fd"});
+  }
+  if(!items.length)return null;
+  var op=term.previousElementSibling;
+  if(!(op&&op.classList.contains("op")))op=null;
+  return {items:items,nA:A/g1,nB:B/g2,nC:C/g2,nD:D/g1,
+    neg:(f[0]<0)!==(g[0]<0),v:normV((s.factor.v||"")+(s.source.v||"")),
+    src:src,term:term,op:op};
+}
+function csAny(){
+  for(var i=0;i<S().length;i++)if(csTargets(i))return i;
+  return -1;
+}
+function csLabel(){return csOn?"Hide cancelling":"Cross simplify";}
+function csSync(){
+  $("csbtn").textContent=csLabel();
+  var can=mode==="practice"&&!done&&!$("exprwrap").hidden&&csAny()>-1;
+  if(!can&&csWant)csStop();
+  $("csbtn").hidden=!can;
+  $("csshow").hidden=!(can&&csOn);
+  if(can&&csWant&&!csOn&&csTargets(activeIdx))csStart(activeIdx,false);
+}
+function csClear(){
+  csOn=false;csSlot=-1;csT=null;csItems=[];
+  var layer=$("cslayer");
+  if(layer){layer.innerHTML="";layer.hidden=true;}
+  $("exprwrap").classList.remove("simplifying");
+  $("exprwrap").style.paddingBottom="";
+  Array.prototype.forEach.call(document.querySelectorAll(".cut"),function(e){e.classList.remove("cut");});
+  Array.prototype.forEach.call(document.querySelectorAll(".csfactor,.csterm"),function(e){e.classList.remove("csfactor","csterm");});
+  $("csshow").hidden=true;
+  rwSync();
+}
+/* one sentence, always visible, saying whether this product is negative or positive */
+function csSignNote(t){
+  return t.neg?"One negative: negative.":"Same signs: positive.";
+}
+function csStop(){
+  csClear();csWant=false;
+  $("csbtn").textContent=csLabel();
+  $("csbtn").setAttribute("aria-pressed","false");
+}
+function csStart(i,takeFocus){
+  var t=csTargets(i);
+  if(!t){
+    csClear();layoutExpr();
+    if(csWant){
+      var n=$("note");n.className="note";
+      n.textContent="Nothing cancels here.";
+    }
+    return;
+  }
+  csClear();
+  csOn=true;csSlot=i;csT=t;
+  t.src.classList.add("csfactor");
+  t.term.classList.add("csterm");
+  if(t.op)t.op.classList.add("csterm");
+  var layer=$("cslayer");
+  layer.hidden=false;
+  layer.innerHTML='<svg class="cssvg" id="cssvg" aria-hidden="true"></svg>';
+  t.items.forEach(function(it,k){
+    var inp=document.createElement("input");
+    inp.type="text";inp.className="csbox";inp.id="csb"+k;inp.placeholder="?";
+    inp.setAttribute("inputmode","numeric");
+    inp.setAttribute("aria-label",it.up?"what is left on top":"what is left on the bottom");
+    ["autocomplete","autocapitalize","autocorrect"].forEach(function(a){inp.setAttribute(a,"off");});
+    inp.setAttribute("spellcheck","false");
+    inp.addEventListener("input",function(){csType(k);});
+    layer.appendChild(inp);
+    csItems.push({id:"csb"+k,el:it.el,want:it.want,up:it.up,pair:it.pair,role:it.role});
+  });
+  $("exprwrap").classList.add("simplifying");
+  csWant=true;
+  $("csbtn").textContent=csLabel();
+  $("csbtn").setAttribute("aria-pressed","true");
+  $("csshow").hidden=false;
+  layoutExpr();
+  var note=$("note");note.className="note";
+  note.textContent="Divide each dotted pair by what they share."
+    +" "+csSignNote(t);
+  var open=csFirstOpen();
+  if(open&&(takeFocus||!slotIsRight(i)))open.focus({preventScroll:true});
+}
+function csToggle(){
+  if(csWant){csStop();layoutExpr();focusFirst();return;}
+  csWant=true;
+  var i=csTargets(activeIdx)?activeIdx:csAny();
+  if(i>-1)csStart(i,true);
+}
+function csFirstOpen(){
+  if(!csOn||!csItems.length)return null;
+  for(var k=0;k<csItems.length;k++){
+    var e=$(csItems[k].id);
+    if(e&&!e.classList.contains("ok"))return e;
+  }
+  return null;
+}
+function csBoxH(fs){return Math.max(26,Math.round(fs*0.44));}
+function csPlace(fs){
+  if(!csOn||!csItems.length)return;
+  var wrap=$("exprwrap");
+  fs=fs||parseFloat($("expr").style.fontSize)||60;
+  var h=csBoxH(fs),w=Math.max(40,Math.round(fs*0.72));
+  var gap=Math.round(h*0.28)+2;
+  function pass(){
+    var b=wrap.getBoundingClientRect(),out={top:1e9,bot:-1e9,h:b.height};
+    if(!b.width)return null;
+    csItems.forEach(function(it){
+      var inp=$(it.id),r=it.el.getBoundingClientRect();
+      inp.style.width=w+"px";inp.style.height=h+"px";
+      inp.style.fontSize=Math.round(h*0.58)+"px";
+      var left=r.left-b.left+r.width/2;
+      inp.style.left=Math.max(w/2+1,Math.min(b.width-w/2-1,left))+"px";
+      var top=it.up?(r.top-b.top-h-gap):(r.bottom-b.top+gap);
+      inp.style.top=Math.round(top)+"px";
+      if(it.up)out.top=Math.min(out.top,top);
+      else out.bot=Math.max(out.bot,top+h);
+    });
+    return out;
+  }
+  var m=pass();
+  if(m){
+    var grew=false;
+    if(m.top<3){wrap.style.paddingTop=Math.round((parseFloat(wrap.style.paddingTop)||0)+(3-m.top))+"px";grew=true;}
+    if(m.bot>m.h-3){wrap.style.paddingBottom=Math.round((parseFloat(getComputedStyle(wrap).paddingBottom)||0)+(m.bot-m.h+3))+"px";grew=true;}
+    if(grew)pass();
+  }
+  csLines();
+}
+function csLines(){
+  var svg=$("cssvg");
+  if(!svg||!csOn)return;
+  var b=$("exprwrap").getBoundingClientRect();
+  if(!b.width)return;
+  svg.setAttribute("viewBox","0 0 "+b.width+" "+b.height);
+  svg.innerHTML="";
+  [0,1].forEach(function(p){
+    var pr=csItems.filter(function(x){return x.pair===p;});
+    if(pr.length!==2)return;
+    var ok=pr.every(function(x){var e=$(x.id);return e&&e.classList.contains("ok");});
+    var r1=pr[0].el.getBoundingClientRect(),r2=pr[1].el.getBoundingClientRect();
+    var ln=document.createElementNS("http://www.w3.org/2000/svg","line");
+    ln.setAttribute("x1",r1.left-b.left+r1.width/2);
+    ln.setAttribute("y1",r1.top-b.top+r1.height/2);
+    ln.setAttribute("x2",r2.left-b.left+r2.width/2);
+    ln.setAttribute("y2",r2.top-b.top+r2.height/2);
+    ln.setAttribute("stroke",ok?"var(--pen)":"var(--ink-faint)");
+    ln.setAttribute("stroke-width",ok?2.6:2);
+    ln.setAttribute("stroke-linecap","round");
+    if(!ok)ln.setAttribute("stroke-dasharray","4 7");
+    svg.appendChild(ln);
+  });
+}
+function csType(k){
+  var it=csItems[k],inp=$(it.id);
+  var v=inp.value.trim();
+  var ok=/^\d+$/.test(v)&&parseInt(v,10)===it.want;
+  inp.classList.toggle("ok",ok);
+  it.el.classList.toggle("cut",ok);
+  csLines();rwSync();
+  if(!ok)return;
+  for(var j=1;j<=csItems.length;j++){
+    var n=csItems[(k+j)%csItems.length],e=$(n.id);
+    if(e&&!e.classList.contains("ok")){e.focus();e.select();return;}
+  }
+  csFinished();
+}
+function csFinished(){
+  var t=csT,note=$("note");
+  note.className="note";
+  note.textContent=(t.nB*t.nD===1)
+    ? "Now multiply: "+t.nA+" \u00d7 "+t.nC+"."
+    : "Now multiply: "+t.nA+" \u00d7 "+t.nC+" over "+t.nB+" \u00d7 "+t.nD+".";
+  note.textContent+=" "+csSignNote(t);
+  var el=$("in"+csSlot);
+  if(el)el.focus({preventScroll:true});
+}
+function csShowMe(){
+  if(!csOn)return;
+  csItems.forEach(function(it){
+    var inp=$(it.id);
+    inp.value=it.want;inp.classList.add("ok");it.el.classList.add("cut");
+  });
+  csLines();rwSync();csFinished();
+}
+
+/* ---------- algebra tiles ----------
+   The same tiles as Combine Like Terms. Distributing is shown as an area
+   model: the outside factor runs down the left edge, the terms inside the
+   parentheses run across the top, and every cell is one product. The cells
+   start as empty outlines; the column being worked on is marked, and it fills
+   with tiles once its answer is right. A negative times a positive gives red
+   tiles; two negatives give coloured ones again. When the problem goes on to
+   combining, the terms are laid out as tiles in their groups, and each
+   positive meets a negative and the pair vanishes: a zero pair. */
+var TA=3,TB=4,TW=1.1,T_WAIT=1000,T_MOVE=800,T_HOLD=200,T_FADE=400;
+var stepping=false,tlOn=true;
+try{if(localStorage.getItem("tilesOn")==="0")tlOn=false;}catch(e){}
+var TL={kind:null,ok:false,filled:{},locked:{},pending:{},timers:[],gathered:false};
+/* the tiles always show the whole of what happens: both terms laid out, then the
+   pairs meeting and vanishing. Skipping to the result would do the simplifying for
+   the student, so the tiles ignore the reduced-motion setting, as in Combine Like Terms */
+function tlReduce(){return false;}
+function tlShown(){return TL.ok&&tlOn;}
+function tlVars(v){var out=[];String(v||"").replace(/([a-z])(?:\^(\d+))?/g,function(_,L,e){out.push({v:L,p:e?+e:1});});return out;}
+/* the first letter is a bar 3 long, a second letter a longer bar, so they never look alike */
+function tlDim(v,names){return !v?TW:(names.indexOf(v)===0?TA:TB);}
+function tlKind(v,names){
+  var vs=tlVars(v),first=function(L){return names.indexOf(L)===0;};
+  if(!vs.length)return "k1";
+  if(vs.length===1&&vs[0].p===1)return first(vs[0].v)?"kx":"ky";
+  if(vs.length===1&&vs[0].p===2)return first(vs[0].v)?"kxx":"kyy";
+  if(vs.length===2&&vs[0].p===1&&vs[1].p===1)return "kxy";
+  return null;
+}
+function tlF(k){return k==="k1"?.5:(k==="kx"||k==="ky")?.58:.8;}
+function tlShape(v,names){
+  var k=tlKind(v,names);if(!k)return null;
+  var vs=tlVars(v);
+  if(k==="k1")return {w:TW,h:TW,k:k};
+  if(k==="kx"||k==="ky")return {w:TW,h:tlDim(vs[0].v,names),k:k};
+  if(k==="kxx"||k==="kyy"){var d=tlDim(vs[0].v,names);return {w:d,h:d,k:k};}
+  return {w:TB,h:TA,k:k};
+}
+function tlFont(k,W,H,u){return Math.min(tlF(k)*u,0.62*Math.min(W,H)*1.6);}
+function tlLabel(v,ng){return "<span>"+(ng?"\u2212":"")+(v?htmlV(v):"1")+"</span>";}
+function tlTile(v,ng,W,H,u,k,cls,attrs,place){
+  var font=tlFont(k,W,H,u);
+  return '<span class="tile '+k+(ng?" neg":"")+(font<7?" nolab":"")+(cls?" "+cls:"")+'" '+(attrs||"")
+    +' style="'+(place||"")+'width:'+W.toFixed(1)+'px;height:'+H.toFixed(1)+'px;font-size:'+font.toFixed(1)+'px">'+tlLabel(v,ng)+'</span>';
+}
+function tlIntTerm(t){return !!t&&t.c[1]===1&&t.c[0]!==0&&/^[a-z]?$/.test(t.v||"");}
+/* the room the tiles get: a right-hand column on wide screens, full width below on narrow ones */
+function tlRoom(){
+  var st=document.querySelector(".stage"),cw=((st&&st.clientWidth)||1000)-70;
+  if(window.innerWidth>1000)return {W:cw*0.45,H:Math.max(220,Math.min(window.innerHeight*0.75,((st&&st.clientHeight)||700)-110))};
+  return {W:cw,H:Math.max(160,window.innerHeight*0.45)};
+}
+
+/* ---- the area model ---- */
+function tlFactorOf(s){
+  if(s.factor)return s.factor;
+  /* subtracting a group is multiplying it by -1 */
+  if(s.source&&s.answer&&eq(s.answer.c,neg(s.source.c))&&s.answer.v===s.source.v)return {c:R(-1),v:""};
+  return null;
+}
+function tlAreaPlan(list){
+  var groups=[],byKey={},i;
+  for(i=0;i<list.length;i++){
+    var s=list[i],f=tlFactorOf(s);
+    if(!f||!s.source)return null;
+    var key=((s.anchor||"").indexOf('[data-g="1"]')>-1?"g1":"g0")+"|"+f.c[0]+"/"+f.c[1]+f.v;
+    if(!(key in byKey)){byKey[key]=groups.length;groups.push({factor:f,items:[]});}
+    groups[byKey[key]].items.push({i:i,src:s.source});
+  }
+  if(!groups.length)return null;
+  var names=[];
+  var addN=function(v){tlVars(v).forEach(function(x){if(names.indexOf(x.v)<0)names.push(x.v);});};
+  var ok=groups.every(function(g){
+    if(!tlIntTerm(g.factor))return false;
+    addN(g.factor.v);
+    return g.items.every(function(it){addN(it.src.v);return tlIntTerm(it.src);});
+  });
+  if(!ok||names.length>2)return null;
+  names.sort();
+  if(groups.some(function(g){return g.items.some(function(it){return !tlKind(normV(g.factor.v+it.src.v),names);});}))return null;
+
+  /* each group is a grid: one edge is the outside factor, the other the terms
+     inside. A long, thin model is turned on its side when that lets the tiles
+     be bigger in the column they have. */
+  var GU=0.16,cells=0,room=tlRoom();
+  var edges=groups.map(function(g){
+    var fac=[],inn=[],r,q;
+    for(r=0;r<Math.abs(g.factor.c[0]);r++)fac.push({v:g.factor.v,neg:g.factor.c[0]<0,fac:true});
+    g.items.forEach(function(it){for(q=0;q<Math.abs(it.src.c[0]);q++)inn.push({v:it.src.v,neg:it.src.c[0]<0,i:it.i});});
+    cells+=fac.length*inn.length;
+    return {fac:fac,inn:inn};
+  });
+  if(cells>160)return null;
+  var span=function(list){return list.reduce(function(a,e){return a+tlDim(e.v,names)+GU;},0.5);};
+  var fit=function(side){
+    var maxW=0,sumH=0;
+    edges.forEach(function(e){
+      var top=side?e.fac:e.inn,left=side?e.inn:e.fac;
+      maxW=Math.max(maxW,span(top));sumH+=span(left);
+    });
+    return Math.min(30,room.W/maxW,(room.H-(groups.length-1)*24)/sumH);
+  };
+  var oneRow=edges.some(function(e){return e.fac.length<2||e.inn.length<2;});
+  /* a single strip reads best lying down, however much room there is */
+  var uUp=fit(false),uSide=fit(true),side=!oneRow&&uSide>uUp*1.15,u=side?uSide:uUp;
+  if(u<7)return null;
+  var px=function(n){return n.toFixed(1)+"px";},gap=Math.max(2,Math.round(u*0.12)),head=TW*u;
+
+  var html="",drawnW=0;
+  edges.forEach(function(e,gi){
+    var top=side?e.fac:e.inn,left=side?e.inn:e.fac;
+    var colW=top.map(function(t){return tlDim(t.v,names)*u;}),rowH=left.map(function(t){return tlDim(t.v,names)*u;});
+    drawnW=Math.max(drawnW,colW.reduce(function(a,b){return a+b;},0)+gap*(colW.length-1)+12);
+    /* only the products are drawn: no factor tiles along the edges */
+    var h='<div class="mat" style="grid-template-columns:'+colW.map(px).join(" ")
+      +';grid-template-rows:'+rowH.map(px).join(" ")+';gap:'+gap+'px">';
+    h+='<span class="field" style="grid-row:1/-1;grid-column:1/-1"></span>';
+    /* the products, empty until that term is answered */
+    left.forEach(function(L,r){top.forEach(function(T,q){
+      var v=normV(L.v+T.v),k=tlKind(v,names),ng=L.neg!==T.neg,i=L.fac?T.i:L.i;
+      var font=tlFont(k,colW[q],rowH[r],u);
+      h+='<span class="cell" data-cell="1" data-i="'+i+'" data-g="'+gi+'" data-v="'+v+'" data-k="'+k+'"'
+        +(ng?' data-neg="1"':'')+(font<7?' data-nolab="1"':'')
+        +' style="grid-row:'+(1+r)+';grid-column:'+(1+q)+';width:'+px(colW[q])+';height:'+px(rowH[r])+';font-size:'+px(font)+'"></span>';
+    });});
+    html+=h+'</div>';
+  });
+  return {kind:"area",html:html,width:Math.ceil(drawnW)};
+}
+function tlFillCell(el,delay){
+  var ng=el.dataset.neg==="1";
+  el.className="tile "+el.dataset.k+(ng?" neg":"")+(el.dataset.nolab?" nolab":"")+(delay>=0?" fill":"");
+  el.style.animationDelay=delay>0?Math.round(delay)+"ms":"";
+  el.innerHTML=tlLabel(el.dataset.v,ng);
+}
+function tlEmptyCell(el){el.className="cell";el.innerHTML="";el.style.animationDelay="";}
+function tlAreaUpdate(instant){
+  var box=$("tiles"),preview=mode==="preview",anim=!instant&&!tlReduce();
+  var byI={},activeG=null;
+  [].forEach.call(box.querySelectorAll("[data-cell]"),function(c){(byI[c.dataset.i]=byI[c.dataset.i]||[]).push(c);});
+  Object.keys(byI).forEach(function(key){
+    var i=+key,list=byI[key];
+    var filled=preview||done||stepIdx===1||slotIsRight(i);
+    var active=!filled&&mode==="practice"&&i===activeIdx;
+    if(active)activeG=list[0].dataset.g;
+    if(filled!==!!TL.filled[i]){
+      var step=Math.min(45,600/list.length);
+      list.forEach(function(c,n){if(filled)tlFillCell(c,anim?n*step:-1);else tlEmptyCell(c);});
+      TL.filled[i]=filled;
+    }
+    if(!filled)list.forEach(function(c){c.classList.toggle("on",active);});
+    [].forEach.call(box.querySelectorAll('.hd[data-i="'+i+'"]'),function(h){h.classList.toggle("hl",active);});
+  });
+  [].forEach.call(box.querySelectorAll(".hdl"),function(h){h.classList.toggle("hl",h.dataset.g===activeG);});
+}
+
+/* ---- gathering like terms ---- */
+/* a fraction in front is shown as that many pieces, every piece in a group cut
+   to the same size: 1/3 n next to -1/6 n becomes two sixth-pieces and one red
+   one, which is the common denominator made visible */
+var UFRAC={2:"\u00bd",3:"\u2153",4:"\u00bc",5:"\u2155",6:"\u2159",8:"\u215b",10:"\u2152"};
+function tlLcm(a,b){return a/gcd(a,b)*b;}
+function tlFamPlan(){
+  /* decimals are written as decimals on the page, so fifth-pieces would not match them */
+  if(current.dec)return null;
+  var terms=current.terms,names=[];
+  terms.forEach(function(t){tlVars(t.v).forEach(function(x){if(names.indexOf(x.v)<0)names.push(x.v);});});
+  if(names.length>2)return null;
+  names.sort();
+  if(!terms.every(function(t){return t.c[0]!==0&&!!tlShape(t.v,names);}))return null;
+  var fams=current.slots.map(function(s,j){return {j:j,v:s.answer.v,idx:[],L:1};});
+  var lost=false;
+  terms.forEach(function(t,k){
+    var f=fams.filter(function(x){return x.v===t.v;})[0];
+    if(f){f.idx.push(k);f.L=tlLcm(f.L,t.c[1]);}else lost=true;
+  });
+  if(lost)return null;
+  var count=0,area=0;
+  fams.forEach(function(f){
+    var sh=tlShape(f.v,names),L=f.L;
+    /* a letter bar is cut across its length, a unit square into strips */
+    if(L>1&&sh.k==="k1"){f.pw=f.ph=TW*0.9;}          /* a piece of a number: a small labelled square */
+    else{
+      /* a piece of a letter: a short bar, never thinner than it can be read */
+      f.pw=L>1&&sh.w<sh.h?sh.w*1.8:sh.w/(sh.w<sh.h?1:L);
+      f.ph=L>1&&sh.w<sh.h?Math.max(sh.h/L,TW*0.9):sh.h;
+    }
+    f.sh=sh;
+    f.idx.forEach(function(k){
+      var c=terms[k].c,n=Math.abs(c[0])*(L/c[1]);
+      count+=n;area+=n*(f.pw+.35)*(f.ph+.35);
+    });
+  });
+  if(fams.some(function(f){return f.L>10;})||count>120)return null;
+  var room=tlRoom();
+  var u=Math.max(8,Math.min(28,Math.sqrt(room.W*room.H*0.3/Math.max(area,1))));
+  var gap=Math.max(3,Math.round(u*.25));
+  fams.sort(function(a,b){return degOf(b.v)-degOf(a.v)||(a.v<b.v?-1:1);});
+  var h="";
+  fams.forEach(function(f){
+    if(!f.idx.length)return;
+    var W=f.pw*u,H=f.ph*u,L=f.L;
+    var piece=L>1?(UFRAC[L]||("1/"+L)):"";
+    h+='<div class="fam hid" data-j="'+f.j+'">';
+    f.idx.forEach(function(k){
+      var t=terms[k],ng=t.c[0]<0,n=Math.abs(t.c[0])*(L/t.c[1]);
+      var font=L>1?Math.min(tlF(f.sh.k)*u,0.62*Math.min(W,H)*1.2):tlFont(f.sh.k,W,H,u);
+      var lab="<span>"+(ng?"\u2212":"")+(L>1?piece+(t.v?htmlV(t.v):""):(t.v?htmlV(t.v):"1"))+"</span>";
+      h+='<div class="trow hid" data-k="'+k+'" style="gap:'+gap+'px">';
+      for(var q=0;q<n;q++){
+        h+='<span class="tile '+f.sh.k+(ng?" neg":"")+(L>1?" piece":"")+(font<7?" nolab":"")
+          +'" style="width:'+W.toFixed(1)+'px;height:'+H.toFixed(1)+'px;font-size:'+font.toFixed(1)+'px">'+lab+'</span>';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  return {kind:"fam",html:h};
+}
+function tlLive(j){
+  var el=$("tiles").querySelector('.fam[data-j="'+j+'"]'),pos=[],ng=[];
+  if(el)[].forEach.call(el.querySelectorAll(".trow:not(.hid) .tile:not(.vanished)"),function(t){(t.classList.contains("neg")?ng:pos).push(t);});
+  return {el:el,pos:pos,neg:ng};
+}
+function tlTidy(el){
+  var any=false;
+  [].forEach.call(el.querySelectorAll(".trow"),function(r){
+    var left=r.querySelectorAll(".tile:not(.vanished)").length;
+    r.classList.toggle("spent",!left);
+    if(left){any=true;return;}
+    /* a term whose tiles all cancelled is crossed out on the line */
+    var t=ctEls[+r.dataset.k];
+    if(t){t.classList.add("tgone");var o=ctOpEl(t);if(o)o.classList.add("tgone");}
+  });
+  el.classList.toggle("spent",!any);
+}
+function tlCancelNow(j,instant){
+  var L=tlLive(j),k=Math.min(L.pos.length,L.neg.length),i;
+  if(!k){TL.pending[j]=false;tlDimFams();return;}
+  var pairs=[];
+  for(i=0;i<k;i++)pairs.push([L.pos[i],L.neg[i]]);
+  pairs.forEach(function(pr){pr.forEach(function(t){TL.locked[+t.parentNode.dataset.k]=true;});});
+  if(instant){
+    pairs.forEach(function(pr){pr.forEach(function(t){t.classList.add("vanished");});});
+    tlTidy(L.el);TL.pending[j]=false;return;
+  }
+  TL.pending[j]=true;
+  /* each positive meets a negative halfway, then the pair fades out */
+  pairs.forEach(function(pr){
+    var a=pr[0].getBoundingClientRect(),b=pr[1].getBoundingClientRect();
+    var mx=(a.left+b.left)/2,my=(a.top+b.top)/2;
+    pr.forEach(function(t,n){
+      var r=n?b:a;
+      t.classList.add("mover");
+      if(n)t.style.zIndex="4";
+      t.style.transition="transform "+T_MOVE+"ms ease-in-out";
+      t.style.transform="translate("+(mx-r.left)+"px,"+(my-r.top)+"px)";
+    });
+  });
+  TL.timers.push(setTimeout(function(){
+    pairs.forEach(function(pr){pr.forEach(function(t){
+      t.style.transition="transform "+T_MOVE+"ms ease-in-out, opacity "+T_FADE+"ms ease-out";
+      t.style.opacity="0";
+    });});
+  },T_MOVE+T_HOLD));
+  TL.timers.push(setTimeout(function(){
+    pairs.forEach(function(pr){pr.forEach(function(t){t.classList.add("vanished");});});
+    tlTidy(L.el);
+    TL.pending[j]=false;
+    tlUpdate(false);   /* starts another round if more opposites arrived */
+  },T_MOVE+T_HOLD+T_FADE+50));
+}
+function tlDimFams(){
+  [].forEach.call($("tiles").querySelectorAll(".fam"),function(el){
+    var j=+el.dataset.j;
+    el.classList.toggle("dim",!done&&mode==="practice"&&slotIsRight(j)&&!TL.pending[j]);
+  });
+}
+/* the last step of the picture: whatever is left of each group slides into one row */
+function tlGather(){
+  var reduce=tlReduce();
+  [].forEach.call($("tiles").querySelectorAll(".fam"),function(el){
+    var rows=[].filter.call(el.querySelectorAll(".trow:not(.hid):not(.spent)"),function(r){return r.querySelector(".tile:not(.vanished)");});
+    if(rows.length<2)return;
+    var tiles=[];
+    rows.forEach(function(r){[].forEach.call(r.querySelectorAll(".tile:not(.vanished)"),function(t){tiles.push(t);});});
+    var before=tiles.map(function(t){return t.getBoundingClientRect();});
+    tiles.forEach(function(t){rows[0].appendChild(t);});
+    rows.slice(1).forEach(function(r){r.classList.add("spent");});
+    if(reduce)return;
+    tiles.forEach(function(t,n){
+      var a=t.getBoundingClientRect();
+      t.style.transition="none";
+      t.style.transform="translate("+(before[n].left-a.left)+"px,"+(before[n].top-a.top)+"px)";
+    });
+    void el.offsetWidth;
+    tiles.forEach(function(t){t.style.transition="transform 500ms ease-in-out";t.style.transform="";});
+  });
+}
+function tlGatherSoon(){
+  TL.gathered=true;
+  var go=function(){
+    if(!done||TL.kind!=="fam")return;
+    if(Object.keys(TL.pending).some(function(j){return TL.pending[j];})){TL.timers.push(setTimeout(go,300));return;}
+    tlGather();
+  };
+  TL.timers.push(setTimeout(go,tlReduce()?0:500));
+}
+function tlFamUpdate(instant){
+  var box=$("tiles"),preview=mode==="preview";
+  [].forEach.call(box.querySelectorAll(".trow"),function(r){
+    var k=+r.dataset.k,j=+r.parentNode.dataset.j;
+    /* a term's tiles come down once it is clicked, or once its group is answered */
+    var vis=preview||done||!!ctPicked[k]||!!TL.locked[k]||slotIsRight(j);
+    var was=!r.classList.contains("hid");
+    r.classList.toggle("hid",!vis);
+    r.classList.toggle("show",vis&&!was&&!instant);
+  });
+  [].forEach.call(box.querySelectorAll(".fam"),function(el){el.classList.toggle("hid",!el.querySelector(".trow:not(.hid)"));});
+  current.slots.forEach(function(s,j){
+    if(TL.pending[j])return;
+    var L=tlLive(j);
+    if(!L.pos.length||!L.neg.length)return;
+    if(instant||preview||tlReduce())tlCancelNow(j,true);
+    else{TL.pending[j]=true;TL.timers.push(setTimeout(function(){tlCancelNow(j,false);},T_WAIT));}
+  });
+  tlDimFams();
+  if((done||preview)&&!TL.gathered)tlGatherSoon();
+}
+
+/* ---- building and updating ---- */
+function tlBuild(){
+  TL.timers.forEach(clearTimeout);
+  TL.timers=[];TL.filled={};TL.locked={};TL.pending={};TL.gathered=false;TL.kind=null;TL.ok=false;
+  var box=$("tiles"),plan=null;
+  box.innerHTML="";
+  if(current){
+    if(current.kind==="distribute")plan=tlAreaPlan(current.slots);
+    else if(current.pre&&(stepIdx===0||mode==="preview"))plan=tlAreaPlan(current.pre.slots);
+    else if(current.terms)plan=tlFamPlan();
+  }
+  TL.ok=!!plan;
+  $("tlbtn").hidden=!TL.ok;
+  var stage=document.querySelector(".stage");
+  if(!plan||!tlOn){box.hidden=true;stage.classList.remove("withtiles");return;}
+  box.hidden=false;
+  stage.classList.add("withtiles");
+  box.style.setProperty("--tw",Math.round(plan.width||tlRoom().W)+"px");
+  box.innerHTML=plan.html;
+  TL.kind=plan.kind;
+  tlUpdate(true);
+}
+function tlUpdate(instant){
+  if(!tlShown()||!current||$("tiles").hidden)return;
+  if(TL.kind==="area")tlAreaUpdate(instant);
+  else if(TL.kind==="fam")tlFamUpdate(instant);
+}
+$("tlbtn").setAttribute("aria-pressed",String(tlOn));
+$("tlbtn").addEventListener("click",function(){
+  tlOn=!tlOn;
+  try{localStorage.setItem("tilesOn",tlOn?"1":"0");}catch(e){}
+  this.setAttribute("aria-pressed",String(tlOn));
+  tlBuild();layoutExpr();focusFirst();
+});
+
+
+/* ---------- 20 to turn in, then as many more as they like ----------
+   Only the Mixed tab counts toward the 20. Every finished problem there is kept
+   with its answer and whether it went right the first time. The 20th ends on
+   the turn-in page; after that the drill keeps going, and the Turn in link
+   stays up to send an updated count. */
+var GOAL=20,DRILL_NAME="Distributive Property",records=[],submitted=false,submittedAt=0,sentOn=false;
+function answerText(p){
+  var list=p.slots.map(function(sl){return sl.answer;}).filter(function(t){return !isZero(t.c);});
+  if(p.sortDeg)list=list.slice().sort(function(a,b){return degOf(b.v)-degOf(a.v);});
+  if(p.kind==="combine")list=list.filter(function(t){return t.v;}).concat(list.filter(function(t){return !t.v;}));
+  return list.length?pretty(plainList(list,p.dec)):"0";
+}
+function recordMixed(){
+  records.push({q:current.qText||"",a:answerText(current),clean:!hadWrong});
+  setCount();
+}
+function setCount(){
+  var c=$("count"),n=records.length+(done?0:1);
+  c.hidden=level!==9;
+  c.textContent=n<=GOAL?"Problem "+n+" of "+GOAL:"Problem "+n;
+  $("tiLink").hidden=false;
+}
+function cleanCount(){return records.filter(function(r){return r.clean;}).length;}
+function escHtml(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function turninOpen(){return !$("turnin").hidden;}
+function showTurnIn(){
+  var n=records.length,clean=cleanCount();
+  var early=n<GOAL;
+  $("ti-title").textContent=early?"Turn in early":n>GOAL?n+" problems done":"All "+GOAL+" done";
+  $("ti-sub").textContent=early
+    ?n+" of "+GOAL+" done."
+    :"Enter your period and name.";
+  $("ti-recap").innerHTML="<div>Problems<b>"+n+"</b></div><div>Right the first time<b>"+clean+"</b></div><div>Needed a retry<b>"+(n-clean)+"</b></div>";
+  $("ti-log").innerHTML='<div class="ti-log">'+records.map(function(r,i){
+    return '<div class="ti-row"><span class="ti-n">'+(i+1)+'.</span><span class="ti-q">'+escHtml(r.q)+" = "+escHtml(r.a)+'</span>'
+      +'<span class="ti-k'+(r.clean?"":" retry")+'">'+(r.clean?"first try":"retry")+"</span></div>";
+  }).join("")+"</div>";
+  var more=submitted&&n>submittedAt;
+  $("gform").hidden=submitted&&!more;
+  if(more){
+    $("ti-feedback").innerHTML='<span class="nt">You turned in '+submittedAt+". Send again to update to "+n+".</span>";
+    $("ti-submit").textContent="Send updated results";
+  } else if(!submitted){
+    $("ti-feedback").innerHTML="";
+    $("ti-submit").textContent="Submit Results";
+  }
+  $("ti-aftertext").textContent="";
+  $("ti-back").textContent=early?"Back to the problems":"Keep practicing";
+  $("formScore").value=n;
+  $("turnin").hidden=false;
+  $("turnin").scrollTop=0;
+  if(!submitted||more)setTimeout(function(){$(submitted?"ti-submit":"studentPeriod").focus();},50);
+}
+function backToPractice(){
+  $("turnin").hidden=true;
+  if(done&&level===9&&records.length>=GOAL)next();else if(done)$("check").focus({preventScroll:true});else focusFirst();
+}
+window.onHiddenFrameLoad=function(){
+  if(!submitted)return;
+  $("ti-feedback").innerHTML='<span class="ok">Submitted.</span>';
+  $("gform").hidden=true;
+};
+function nameCheck(){
+  var ln=$("lastName").value.trim(),fn=$("firstName").value.trim();
+  var row=function(t,v){return '<div class="r"><span class="t">'+t+'</span><span class="v'+(v?"":" empty")+'">'+(v?escHtml(v):"\u2014")+"</span></div>";};
+  $("nameCheck").innerHTML='<div class="hd">Check your name:</div>'
+    +row("Last name",ln)+row("First name",fn)+row("Roll call",ln&&fn?ln+", "+fn:"");
+}
+["lastName","firstName"].forEach(function(id){$(id).addEventListener("input",nameCheck);});
+nameCheck();
+$("gform").addEventListener("submit",function(){
+  var ln=$("lastName").value.trim(),fn=$("firstName").value.trim();
+  $("studentName").value="Period "+$("studentPeriod").value.trim()+" \u2014 "+ln+" \u2014 "+fn
+    +" \u2014 "+cleanCount()+" clean solves \u2014 "+DRILL_NAME+" ("+records.length+" problems)";
+  $("formScore").value=records.length;
+  submitted=true;submittedAt=records.length;
+});
+$("ti-back").addEventListener("click",backToPractice);
+$("tiLink").addEventListener("click",showTurnIn);
+
+/* ---------- stats: the student sees Solved; the rest is for the teacher ---------- */
+function paintStats(){
+  $("s-ok").textContent=solved;
+  $("t-ok").textContent=solved;
+  $("t-all").textContent=attempted;
+  $("t-acc").textContent=attempted?Math.round(firstTry/attempted*100)+"%":"\u2013";
+  $("t-str").textContent=streak+" ("+bestStreak+")";
+  $("t-hint").textContent=hints;
+  var cls=$("t-cls");cls.innerHTML="";
+  CLASS.forEach(function(p){
+    var s=document.createElement("span");
+    s.textContent=p.tag;
+    if(classResult[p.tag])s.className=classResult[p.tag];
+    cls.appendChild(s);
+  });
+  var ul=$("t-tally");ul.innerHTML="";
+  var rows=Object.keys(tally).filter(function(k){return tally[k]>0;}).sort(function(a,b){return tally[b]-tally[a];});
+  if(!rows.length){ul.innerHTML='<li class="none">None yet</li>';return;}
+  rows.forEach(function(k){
+    var li=document.createElement("li");
+    li.innerHTML="<span>"+TALLY_LABEL[k]+"</span><b>"+tally[k]+"</b>";
+    ul.appendChild(li);
+  });
+}
+function toggleTeacher(force){
+  var t=$("teacher");
+  t.hidden=force===undefined?!t.hidden:!force;
+  if(!t.hidden)paintStats();
+}
+
+/* ---------- wiring ---------- */
+var levelBar=$("levels");
+if(levelBar)LEVELS.forEach(function(l){
+  if(l.sep){var sp=document.createElement("span");sp.className="lvlsep";sp.setAttribute("aria-hidden","true");levelBar.appendChild(sp);}
+  var b=document.createElement("button");
+  b.className="lvl";b.type="button";
+  b.textContent=l.name;
+  b.title=l.full;
+  b.setAttribute("aria-label",l.full);
+  b.setAttribute("aria-pressed",String(l.id===level));
+  b.addEventListener("click",function(){
+    level=l.id;
+    Array.prototype.forEach.call(levelBar.querySelectorAll(".lvl"),function(c){c.setAttribute("aria-pressed",String(c===b));});
+    if(level===0){classIdx=0;show(CLASS[0]);}
+    else{var p=gen(level);hist[level]=[p];histIdx=0;show(p);}
+  });
+  levelBar.appendChild(b);
+});
+
+Array.prototype.forEach.call(document.querySelectorAll(".modes button"),function(b){
+  b.addEventListener("click",function(){
+    if(mode===b.dataset.mode)return;
+    mode=b.dataset.mode;
+    Array.prototype.forEach.call(document.querySelectorAll(".modes button"),function(c){c.setAttribute("aria-pressed",String(c===b));});
+    if(mode==="preview"&&level!==0){hist[level]=[current];histIdx=0;}
+    show(current);
+  });
+});
+
+$("check").addEventListener("click",check);
+$("csbtn").addEventListener("click",csToggle);
+document.addEventListener("click",function(e){
+  var el=e.target.closest&&e.target.closest(".term.pickable");
+  if(el){ctPick(el);tlUpdate(false);}
+});
+$("csshow").addEventListener("click",csShowMe);
+$("prev").addEventListener("click",function(){step(-1);});
+$("next").addEventListener("click",function(){step(1);});
+$("solvedBox").addEventListener("dblclick",function(){toggleTeacher();});
+$("tclose").addEventListener("click",function(){toggleTeacher(false);});
+$("reset").addEventListener("click",function(){
+  solved=0;attempted=0;firstTry=0;streak=0;bestStreak=0;hints=0;classResult={};
+  Object.keys(tally).forEach(function(k){tally[k]=0;});
+  paintStats();show(level===0?CLASS[classIdx]:gen(level));
+});
+
+document.addEventListener("keydown",function(e){
+  if(turninOpen())return;
+  var tag=e.target.tagName;
+  var pk=e.target.closest&&e.target.closest(".term.pickable");
+  if(pk&&(e.key==="Enter"||e.key===" ")){e.preventDefault();ctPick(pk);tlUpdate(false);return;}
+  var inCs=e.target.classList&&e.target.classList.contains("csbox");
+  if(e.key==="Escape"&&csWant){e.preventDefault();csStop();layoutExpr();focusFirst();return;}
+  if(inCs&&e.key==="Enter"){e.preventDefault();var ab=$("in"+csSlot);if(ab)ab.focus();return;}
+  if(e.key==="Escape"&&!$("teacher").hidden){toggleTeacher(false);return;}
+  if(e.key==="T"&&e.shiftKey&&tag!=="INPUT"){e.preventDefault();toggleTeacher();return;}
+  if(e.key==="Enter"){
+    if(tag==="BUTTON"&&e.target.id!=="check"&&e.target.id!=="next")return;
+    e.preventDefault();
+    if(e.repeat)return;
+    if(mode==="preview")step(1);else check();
+    return;
+  }
+  if(mode==="preview"&&tag!=="INPUT"){
+    if(e.key==="ArrowRight"){e.preventDefault();step(1);}
+    else if(e.key==="ArrowLeft"){e.preventDefault();step(-1);}
+  }
+});
+
+var rt;
+window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(layoutExpr,120);});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(layoutExpr);
+
+paintStats();
+(function(){var p=gen(9);hist[9]=[p];histIdx=0;show(p);})();
+// the page may not have focus yet (e.g. inside a viewer); grab it as soon as it does
+window.addEventListener("load",function(){try{window.focus();}catch(e){}focusFirst();});
+window.addEventListener("focus",function(){setTimeout(focusFirst,0);});
+document.addEventListener("pointerup",function(e){
+  var t=e.target.closest("button,input,a,.teacher,.term.pickable,.turnin");
+  if(!t)focusFirst();
+});
+})();
+</script>
+</body>
+</html>
