@@ -223,14 +223,17 @@ sup{font-size:.58em;line-height:0;vertical-align:.75em}
 .tbtn[hidden]{display:none}
 .stagehead .tbtn{margin-left:auto}
 .tbtn[aria-pressed="false"]{opacity:.45}
-.tiles{margin-top:22px;display:flex;flex-direction:column;align-items:flex-start;gap:24px}
+.side{margin-top:22px;display:flex;flex-direction:column;align-items:flex-start;gap:26px}
+.side[hidden]{display:none}
+.tiles{display:flex;flex-direction:column;align-items:flex-start;gap:24px}
 @media (min-width:1001px){
   .stage.withtiles{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr auto auto;column-gap:40px}
   .stage.withtiles .stagehead{grid-column:1/-1}
   .stage.withtiles .work{grid-column:1;grid-row:2;min-height:auto}
   .stage.withtiles .controls{grid-column:1;grid-row:3}
   .stage.withtiles .note{grid-column:1;grid-row:4}
-  .stage.withtiles .tiles{grid-column:2;grid-row:2/5;align-self:center;margin-top:0;padding-left:28px;border-left:1px solid var(--rule);box-sizing:content-box;width:var(--tw)}
+  .stage.withtiles .side{grid-column:2;grid-row:2/5;align-self:center;margin-top:0;padding-left:28px;border-left:1px solid var(--rule)}
+  .stage.withtiles .tiles{box-sizing:content-box;width:var(--tw)}
 }
 .tiles[hidden]{display:none}
 .tile{position:relative;display:grid;place-items:center;border:2px solid var(--tedge);color:#fff;font-family:var(--font);line-height:1;user-select:none;white-space:nowrap}
@@ -268,6 +271,32 @@ sup{font-size:.58em;line-height:0;vertical-align:.75em}
 .tile.vanished,.trow.spent,.fam.spent,.trow.hid,.fam.hid{display:none}
 .expr .term.tgone,.line2 .term.tgone,.expr .op.tgone,.line2 .op.tgone{color:var(--ink-faint);text-decoration:line-through;text-decoration-thickness:.05em}
 
+/* ---------- fraction steps: like terms with different bottoms, worked the paper way ----------
+   every group's steps are laid in the same cell, so the panel keeps one size while
+   the student moves from group to group and nothing on the page shifts */
+.fhelp{display:grid;min-width:min(300px,100%);font-size:28px;line-height:1.2;color:var(--ink);background:var(--tint);border-radius:14px;padding:14px 22px 16px}
+.fhelp[hidden]{display:none}
+.fh-pane{grid-area:1/1;visibility:hidden;display:flex;flex-direction:column;gap:4px}
+.fh-pane.on{visibility:visible}
+.fh-pane.idle{width:0;min-width:100%;justify-content:center;font-size:15px;line-height:1.45;color:var(--ink-soft)}
+.fh-title{font-size:15px;font-weight:700;color:var(--ink-soft);margin-bottom:4px}
+.fh-row{display:flex;align-items:center;min-height:1.95em;white-space:nowrap}
+.fh-note{width:0;min-width:100%;font-size:14px;line-height:1.35;color:var(--ink-soft);white-space:normal}
+.fhelp .frac .num,.fhelp .frac .den{font-size:.78em}
+.fhelp .op{color:var(--ink-soft)}
+.fhelp .f0{color:var(--fam0)} .fhelp .f1{color:var(--fam1)} .fhelp .f2{color:var(--fam2)} .fhelp .f3{color:var(--fam3)}
+/* the multiplier written beside the top and the bottom, as on paper */
+.fh-x{display:inline-flex;flex-direction:column;vertical-align:middle;color:var(--pen);font-weight:700;margin:0 .05em 0 .08em}
+.fh-x>span{font-size:.56em;line-height:1.46}
+.fh-new{color:var(--pen)}
+.fh-eq{color:var(--ink-soft);padding:0 .25em}
+.fh-ans{display:inline-grid;vertical-align:middle}
+.fh-ans>span{grid-area:1/1;display:inline-flex;align-items:center;white-space:nowrap}
+.fh-ans .q{font-weight:700;color:var(--ink-soft)}
+.fh-ans .a{visibility:hidden;color:var(--go)}
+.fh-pane.fh-done .fh-ans .q{visibility:hidden}
+.fh-pane.on.fh-done .fh-ans .a{visibility:visible}
+@media (max-width:1000px){.fhelp{font-size:24px;padding:12px 16px 14px}}
 
 /* ---------- problem count and turning in ---------- */
 .head{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px}
@@ -369,7 +398,10 @@ sup{font-size:.58em;line-height:0;vertical-align:.75em}
       <button class="btn primary" id="next" type="button" hidden>Next</button>
     </div>
     <p class="note" id="note" role="status" aria-live="polite"></p>
-    <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
+    <div class="side" id="side" hidden>
+      <div class="fhelp" id="fhelp" role="region" aria-label="Fraction steps" hidden></div>
+      <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
+    </div>
   </main>
 
 </div>
@@ -1064,6 +1096,7 @@ function show(p){
 
   csClear();activeIdx=0;
   csSync();
+  fhReset();
   tlBuild();
   layoutExpr();
   if(preview)showFinal();else ctSetup();
@@ -1127,6 +1160,7 @@ function nextStep(){
   buildInputs(current.slots);
   var note=$("note");note.className="note";note.textContent="";
   csSync();
+  fhReset();
   tlBuild();
   layoutExpr();
   ctSetup();
@@ -1493,6 +1527,7 @@ function complete(){
   note.className="note good";
   note.textContent="Correct!";
   ctFinish();
+  fhSync();
   tlUpdate(false);
   showFinal();
   csSync();
@@ -1562,6 +1597,7 @@ function ctOpEl(el){
   return (o&&o.classList.contains("op"))?o:null;
 }
 function ctPaint(){
+  fhSync();
   if(!ctEls.length||done)return;
   var fin={},list=S(),j;
   for(j=0;j<list.length;j++)if(slotIsRight(j)&&list[j].answer)fin[list[j].answer.v]=true;
@@ -1637,6 +1673,103 @@ function ctFinish(){
     el.classList.remove("pickable","tpick");el.classList.add("tdone");
     el.removeAttribute("tabindex");
     if(op){op.classList.remove("tpick");op.classList.add("tdone");}
+  });
+}
+
+/* ---------- fraction steps beside the work ----------
+   When the like terms just picked have different bottoms (a whole number and a
+   fraction, or two fractions like 1/4 and 1/8), the steps are written out to the
+   side the way they are on paper: the numbers in front, whole numbers over 1,
+   each one rewritten over the common denominator, then  = ?  for the student.
+   The answer still goes in the box; the steps fill in the ? once it is right. */
+var fhJ=-1;
+function fhTerms(j){
+  var v=current.slots[j].answer.v;
+  return current.terms.filter(function(t){return t.v===v;});
+}
+function fhNeeds(j){
+  var s=current.slots[j];
+  if(!s||!s.answer||isZero(s.answer.c))return false;
+  var ts=fhTerms(j);
+  if(ts.length<2||ts.every(function(t){return t.c[1]===1;}))return false;
+  return ts.some(function(t){return t.c[1]!==ts[0].c[1];});
+}
+function fhGroups(){
+  if(!current||current.kind!=="combine"||current.dec||mode!=="practice")return [];
+  if(current.pre&&stepIdx===0)return [];
+  return current.slots.map(function(_,j){return j;}).filter(fhNeeds);
+}
+function fhFrac(n,d,cls){
+  return '<span class="frac'+(cls?" "+cls:"")+'"><span class="num">'+n+'</span><span class="den">'+d+'</span></span>';
+}
+function fhAmt(c){
+  var sign=c[0]<0?"&minus;":"";
+  return sign+(c[1]===1?String(Math.abs(c[0])):fhFrac(Math.abs(c[0]),c[1]));
+}
+function fhOp(i,ng){
+  if(i===0)return ng?'<span class="op">&minus;</span>':"";
+  return '<span class="op"> '+(ng?"&minus;":"+")+' </span>';
+}
+function fhPane(j){
+  var ts=fhTerms(j),v=current.slots[j].answer.v;
+  var L=ts.reduce(function(a,t){return tlLcm(a,t.c[1]);},1);
+  var hasWhole=ts.some(function(t){return t.c[1]===1;});
+  var line1=ts.map(function(t,i){return i===0?htmlTerm(t):fhOp(i,t.c[0]<0)+htmlAbsTerm(t);}).join("");
+  var line2=ts.map(function(t,i){
+    var m=L/t.c[1];
+    return fhOp(i,t.c[0]<0)+fhFrac(Math.abs(t.c[0]),t.c[1])
+      +(m>1?'<span class="fh-x" aria-label="times '+m+' over '+m+'"><span>&times;'+m+'</span><span>&times;'+m+'</span></span>':"");
+  }).join("");
+  var raw=0;
+  var line3=ts.map(function(t,i){
+    var m=L/t.c[1];raw+=t.c[0]*m;
+    return fhOp(i,t.c[0]<0)+fhFrac(Math.abs(t.c[0])*m,L,m>1?"fh-new":"");
+  }).join("");
+  var red=R(raw,L);
+  var ans=(raw<0?"&minus;":"")+fhFrac(Math.abs(raw),L);
+  if(red[1]!==L)ans+='<span class="fh-eq">=</span>'+fhAmt(red);
+  var vh=v?htmlV(v):"";
+  var note1=v?("Leave off the "+vh+" for now."+(hasWhole?" Whole numbers go over 1.":"")):(hasWhole?"Whole numbers go over 1.":"");
+  var h='<div class="fh-pane" data-j="'+j+'">'
+    +'<div class="fh-title">Adding the fractions</div>'
+    +'<div class="fh-row"><span class="f'+(j%4)+'">'+line1+'</span></div>'
+    +(note1?'<div class="fh-note">'+note1+'</div>':"")
+    +'<div class="fh-row"><span>'+line2+'</span></div>'
+    +'<div class="fh-note">Common denominator: '+L+'</div>'
+    +'<div class="fh-row"><span>'+line3+'<span class="fh-eq">=</span>'
+      +'<span class="fh-ans"><span class="q">?</span><span class="a">'+ans+'</span></span></span></div>'
+    +(v?'<div class="fh-note">Then put the '+vh+' back on.</div>':"")
+    +'</div>';
+  return h;
+}
+function sideSync(){
+  var side=$("side"),off=$("tiles").hidden&&$("fhelp").hidden;
+  side.hidden=off;
+  document.querySelector(".stage").classList.toggle("withtiles",!off);
+}
+/* a new problem or step: lay out the steps for every group that will need them */
+function fhReset(){
+  var box=$("fhelp"),js=fhGroups();
+  fhJ=-1;
+  if(!js.length){box.hidden=true;box.innerHTML="";sideSync();return;}
+  box.innerHTML='<div class="fh-pane idle on" data-j="idle">Click like terms with fractions to see the fraction steps here.</div>'
+    +js.map(fhPane).join("");
+  box.hidden=false;
+  sideSync();
+}
+/* which steps show: the group that has just been picked in full, else the last one answered */
+function fhSync(){
+  var box=$("fhelp");
+  if(!box||box.hidden||!current)return;
+  var want="idle";
+  if(ctCur!==null&&ctReady()){
+    var j=ctFamIdx(ctCur);
+    if(box.querySelector('.fh-pane[data-j="'+j+'"]')){want=j;fhJ=j;}
+  } else if(fhJ>=0&&slotIsRight(fhJ))want=fhJ;
+  [].forEach.call(box.querySelectorAll(".fh-pane"),function(el){
+    var k=el.dataset.j;
+    el.classList.toggle("on",String(want)===k);
+    if(k!=="idle")el.classList.toggle("fh-done",slotIsRight(+k));
   });
 }
 
@@ -1912,7 +2045,8 @@ function tlIntTerm(t){return !!t&&t.c[1]===1&&t.c[0]!==0&&/^[a-z]?$/.test(t.v||"
 /* the room the tiles get: a right-hand column on wide screens, full width below on narrow ones */
 function tlRoom(){
   var st=document.querySelector(".stage"),cw=((st&&st.clientWidth)||1000)-70;
-  if(window.innerWidth>1000)return {W:cw*0.45,H:Math.max(220,Math.min(window.innerHeight*0.75,((st&&st.clientHeight)||700)-110))};
+  var fh=$("fhelp"),fhH=(fh&&!fh.hidden)?fh.offsetHeight+26:0;
+  if(window.innerWidth>1000)return {W:cw*0.45,H:Math.max(180,Math.min(window.innerHeight*0.75,((st&&st.clientHeight)||700)-110)-fhH)};
   return {W:cw,H:Math.max(160,window.innerHeight*0.45)};
 }
 
@@ -2206,10 +2340,9 @@ function tlBuild(){
   }
   TL.ok=!!plan;
   $("tlbtn").hidden=!TL.ok;
-  var stage=document.querySelector(".stage");
-  if(!plan||!tlOn){box.hidden=true;stage.classList.remove("withtiles");return;}
+  if(!plan||!tlOn){box.hidden=true;sideSync();return;}
   box.hidden=false;
-  stage.classList.add("withtiles");
+  sideSync();
   box.style.setProperty("--tw",Math.round(plan.width||tlRoom().W)+"px");
   box.innerHTML=plan.html;
   TL.kind=plan.kind;
